@@ -2,12 +2,21 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#58a98a">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+  <meta
+    name="theme-color"
+    content="#58a98a"
+  >
 
   <title>活動記録表</title>
 
-  <link rel="stylesheet" href="style.css?v=4">
+  <link
+    rel="stylesheet"
+    href="style.css?v=5"
+  >
 </head>
 
 <body>
@@ -17,18 +26,25 @@
 
   <main>
     <!-- 記録入力画面 -->
-    <section id="inputPage" class="page active">
+    <section
+      id="inputPage"
+      class="page active"
+    >
       <div class="card form-card">
         <h2>活動を記録</h2>
 
-        <label for="recordDate">日付</label>
+        <label for="recordDate">
+          日付
+        </label>
 
         <input
           id="recordDate"
           type="date"
         >
 
-        <label for="recordTime">時刻</label>
+        <label for="recordTime">
+          時刻
+        </label>
 
         <div class="time-row">
           <input
@@ -68,37 +84,60 @@
         ></textarea>
 
         <fieldset>
-          <legend>気分</legend>
+          <legend>
+            気分
+          </legend>
 
           <div
             id="moodButtons"
             class="mood-buttons"
           >
-            <button type="button" data-mood="-3">
+            <button
+              type="button"
+              data-mood="-3"
+            >
               −3
             </button>
 
-            <button type="button" data-mood="-2">
+            <button
+              type="button"
+              data-mood="-2"
+            >
               −2
             </button>
 
-            <button type="button" data-mood="-1">
+            <button
+              type="button"
+              data-mood="-1"
+            >
               −1
             </button>
 
-            <button type="button" data-mood="0">
+            <button
+              type="button"
+              data-mood="0"
+            >
               0
             </button>
 
-            <button type="button" data-mood="1">
+            <button
+              type="button"
+              data-mood="1"
+            >
               ＋1
             </button>
 
-            <button type="button" data-mood="2">
+            <button
+              type="button"
+              data-mood="2"
+            >
               ＋2
             </button>
 
-            <button type="button" data-mood="3">
+            <button
+              type="button"
+              data-mood="3"
+            >
               ＋3
             </button>
           </div>
@@ -142,7 +181,9 @@
       class="page"
     >
       <div class="section-heading">
-        <h2>時系列で見る</h2>
+        <h2>
+          時系列で見る
+        </h2>
 
         <span
           id="recordCount"
@@ -208,6 +249,7 @@
         ></p>
       </div>
 
+      <!-- 活動内容検索 -->
       <div class="activity-search">
         <label for="activitySearchInput">
           活動内容を検索
@@ -238,9 +280,17 @@
         </div>
       </div>
 
+      <!-- 通常画面の時系列表示 -->
       <div
         id="timeline"
         class="timeline"
+      ></div>
+
+      <!-- 印刷専用の時系列表示 -->
+      <div
+        id="timelinePrintPages"
+        class="timeline-print-pages"
+        aria-hidden="true"
       ></div>
 
       <button
@@ -258,7 +308,9 @@
       class="page"
     >
       <div class="card graph-card">
-        <h2>気分の推移</h2>
+        <h2>
+          気分の推移
+        </h2>
 
         <p class="graph-note">
           横軸：日時　
@@ -337,7 +389,7 @@
       </div>
     </section>
 
-    <!-- 定期的な活動 -->
+    <!-- 定期的な活動の画面 -->
     <div
       id="routineModal"
       class="modal-backdrop hidden"
@@ -383,7 +435,9 @@
           id="routineSettings"
           class="routine-settings hidden"
         >
-          <h3>よくする活動を編集</h3>
+          <h3>
+            よくする活動を編集
+          </h3>
 
           <div class="routine-add-row">
             <input
@@ -441,6 +495,6 @@
     </button>
   </nav>
 
-  <script src="script.js?v=4"></script>
+  <script src="script.js?v=5"></script>
 </body>
 </html>

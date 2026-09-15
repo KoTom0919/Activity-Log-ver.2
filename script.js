@@ -10,7 +10,8 @@ const STORAGE_KEY =
 const ROUTINE_STORAGE_KEY =
   "routineActivities_v1";
 
-let records = loadRecords();
+let records =
+  loadRecords();
 
 let routineActivities =
   loadRoutineActivities();
@@ -108,7 +109,9 @@ renderTimeline();
 ========================= */
 
 document
-  .getElementById("nowButton")
+  .getElementById(
+    "nowButton"
+  )
   .addEventListener(
     "click",
     setCurrentDateTime
@@ -124,7 +127,7 @@ cancelEditButton.addEventListener(
   () => resetForm()
 );
 
-/* 定期的な活動 */
+/* 定期的な活動を開く */
 
 document
   .getElementById(
@@ -171,6 +174,8 @@ newRoutineInput.addEventListener(
   }
 );
 
+/* モーダルの外側を押して閉じる */
+
 routineModal.addEventListener(
   "click",
   event => {
@@ -179,6 +184,8 @@ routineModal.addEventListener(
     }
   }
 );
+
+/* Escキーで閉じる */
 
 document.addEventListener(
   "keydown",
@@ -193,6 +200,8 @@ document.addEventListener(
     }
   }
 );
+
+/* 定期的な活動を選択 */
 
 routineList.addEventListener(
   "click",
@@ -219,17 +228,21 @@ routineList.addEventListener(
   }
 );
 
+/* 定期的な活動の編集 */
+
 routineEditList.addEventListener(
   "change",
   updateRoutineActivity
 );
+
+/* 定期的な活動の削除 */
 
 routineEditList.addEventListener(
   "click",
   deleteRoutineActivity
 );
 
-/* 記録削除 */
+/* すべての記録を削除 */
 
 document
   .getElementById(
@@ -240,7 +253,7 @@ document
     clearAllRecords
   );
 
-/* 日付フィルター */
+/* 時系列の日付絞り込み */
 
 document
   .getElementById(
@@ -259,6 +272,8 @@ document
     "click",
     resetTimelineFilter
   );
+
+/* グラフの日付絞り込み */
 
 document
   .getElementById(
@@ -286,9 +301,11 @@ document
   )
   .addEventListener(
     "click",
-    () => printSelectedPage(
-      "timeline"
-    )
+    () => {
+      printSelectedPage(
+        "timeline"
+      );
+    }
   );
 
 document
@@ -297,9 +314,11 @@ document
   )
   .addEventListener(
     "click",
-    () => printSelectedPage(
-      "graph"
-    )
+    () => {
+      printSelectedPage(
+        "graph"
+      );
+    }
   );
 
 window.addEventListener(
@@ -465,14 +484,16 @@ function loadRoutineActivities() {
     const parsedData =
       JSON.parse(savedData);
 
-    return Array.isArray(parsedData)
-      ? parsedData.filter(item => {
-          return (
-            typeof item === "string" &&
-            item.trim()
-          );
-        })
-      : [];
+    if (!Array.isArray(parsedData)) {
+      return [];
+    }
+
+    return parsedData.filter(item => {
+      return (
+        typeof item === "string" &&
+        item.trim()
+      );
+    });
   } catch (error) {
     console.error(
       "定期的な活動の読み込みに失敗しました。",
@@ -579,14 +600,15 @@ function renderRoutineActivities() {
     !routineSettingsOpen
   );
 
-  document
-    .getElementById(
+  const settingsButton =
+    document.getElementById(
       "toggleRoutineSettingsButton"
-    )
-    .textContent =
-      routineSettingsOpen
-        ? "設定を閉じる"
-        : "設定";
+    );
+
+  settingsButton.textContent =
+    routineSettingsOpen
+      ? "設定を閉じる"
+      : "設定";
 
   routineEditList.innerHTML =
     routineActivities
@@ -726,22 +748,34 @@ function getLocalDateAndTime(
   const month =
     String(
       date.getMonth() + 1
-    ).padStart(2, "0");
+    ).padStart(
+      2,
+      "0"
+    );
 
   const day =
     String(
       date.getDate()
-    ).padStart(2, "0");
+    ).padStart(
+      2,
+      "0"
+    );
 
   const hours =
     String(
       date.getHours()
-    ).padStart(2, "0");
+    ).padStart(
+      2,
+      "0"
+    );
 
   const minutes =
     String(
       date.getMinutes()
-    ).padStart(2, "0");
+    ).padStart(
+      2,
+      "0"
+    );
 
   return {
     date:
@@ -997,7 +1031,7 @@ function validateDateRange(
   return true;
 }
 
-/* 時系列フィルター */
+/* 時系列の日付フィルター */
 
 function applyTimelineFilter() {
   const start =
@@ -1049,7 +1083,7 @@ function resetTimelineFilter() {
   renderTimeline();
 }
 
-/* グラフフィルター */
+/* グラフの日付フィルター */
 
 function applyGraphFilter() {
   const start =
@@ -1105,6 +1139,31 @@ function resetGraphFilter() {
    時系列表示
 ========================= */
 
+function getTimelineItems() {
+  const searchWord =
+    activitySearchText
+      .toLocaleLowerCase(
+        "ja-JP"
+      );
+
+  return filteredRecords(
+    timelineFilter
+  ).filter(record => {
+    const activityText =
+      record.activity
+        .toLocaleLowerCase(
+          "ja-JP"
+        );
+
+    return (
+      !searchWord ||
+      activityText.includes(
+        searchWord
+      )
+    );
+  });
+}
+
 function renderTimeline() {
   const timeline =
     document.getElementById(
@@ -1121,29 +1180,8 @@ function renderTimeline() {
       "clearAllButton"
     );
 
-  const searchWord =
-    activitySearchText
-      .toLocaleLowerCase(
-        "ja-JP"
-      );
-
   const items =
-    filteredRecords(
-      timelineFilter
-    ).filter(record => {
-      const activityText =
-        record.activity
-          .toLocaleLowerCase(
-            "ja-JP"
-          );
-
-      return (
-        !searchWord ||
-        activityText.includes(
-          searchWord
-        )
-      );
-    });
+    getTimelineItems();
 
   recordCount.textContent =
     `${items.length}件`;
@@ -1310,7 +1348,9 @@ function clearAllRecords() {
 
 function showPage(pageId) {
   document
-    .querySelectorAll(".page")
+    .querySelectorAll(
+      ".page"
+    )
     .forEach(page => {
       page.classList.toggle(
         "active",
@@ -1369,6 +1409,8 @@ function printSelectedPage(
     "print-timeline"
   );
 
+  buildTimelinePrintPages();
+
   window.print();
 }
 
@@ -1377,6 +1419,136 @@ function clearPrintMode() {
     "print-timeline",
     "print-graph"
   );
+}
+
+/* 印刷用ページの作成 */
+
+function buildTimelinePrintPages() {
+  const printArea =
+    document.getElementById(
+      "timelinePrintPages"
+    );
+
+  const items =
+    getTimelineItems();
+
+  if (items.length === 0) {
+    printArea.innerHTML = `
+      <section class="timeline-print-page">
+        <div class="timeline-print-header">
+          <h2>活動記録表</h2>
+          <span>0件</span>
+        </div>
+
+        <p class="timeline-print-empty">
+          条件に一致する記録がありません。
+        </p>
+      </section>
+    `;
+
+    return;
+  }
+
+  const pages = [];
+
+  /*
+    1ページ20件ずつに分割する
+  */
+
+  for (
+    let index = 0;
+    index < items.length;
+    index += 20
+  ) {
+    pages.push(
+      items.slice(
+        index,
+        index + 20
+      )
+    );
+  }
+
+  printArea.innerHTML =
+    pages
+      .map((pageItems, pageIndex) => {
+        /*
+          左側に最初の10件
+          右側に次の10件
+        */
+
+        const leftItems =
+          pageItems.slice(
+            0,
+            10
+          );
+
+        const rightItems =
+          pageItems.slice(
+            10,
+            20
+          );
+
+        return `
+          <section class="timeline-print-page">
+            <div class="timeline-print-header">
+              <h2>活動記録表</h2>
+
+              <span>
+                ${items.length}件　
+                ${pageIndex + 1}/${pages.length}ページ
+              </span>
+            </div>
+
+            <div class="timeline-print-columns">
+              <div class="timeline-print-column">
+                ${renderTimelinePrintItems(
+                  leftItems
+                )}
+              </div>
+
+              <div class="timeline-print-column">
+                ${renderTimelinePrintItems(
+                  rightItems
+                )}
+              </div>
+            </div>
+          </section>
+        `;
+      })
+      .join("");
+}
+
+/* 印刷用の記録 */
+
+function renderTimelinePrintItems(
+  items
+) {
+  return items
+    .map(record => {
+      return `
+        <article class="timeline-print-item">
+          <div class="timeline-print-record-head">
+            <time
+              datetime="${record.date}T${record.time}"
+            >
+              ${formatDate(record.date)}
+              ${record.time}
+            </time>
+
+            <span>
+              気分 ${formatMood(record.mood)}
+            </span>
+          </div>
+
+          <p>${
+            escapeHtml(
+              record.activity
+            )
+          }</p>
+        </article>
+      `;
+    })
+    .join("");
 }
 
 /* =========================
@@ -1444,7 +1616,9 @@ function drawGraph() {
     );
 
   const context =
-    canvas.getContext("2d");
+    canvas.getContext(
+      "2d"
+    );
 
   context.scale(
     pixelRatio,
@@ -1522,6 +1696,8 @@ function drawGraph() {
     );
   }
 
+  /* 目盛り線 */
+
   context.font =
     "12px sans-serif";
 
@@ -1573,6 +1749,8 @@ function drawGraph() {
     );
   }
 
+  /* 折れ線 */
+
   if (items.length > 1) {
     context.strokeStyle =
       "#58a98a";
@@ -1594,15 +1772,23 @@ function drawGraph() {
           getY(record.mood);
 
         if (index === 0) {
-          context.moveTo(x, y);
+          context.moveTo(
+            x,
+            y
+          );
         } else {
-          context.lineTo(x, y);
+          context.lineTo(
+            x,
+            y
+          );
         }
       }
     );
 
     context.stroke();
   }
+
+  /* グラフの点 */
 
   items.forEach(
     (record, index) => {
@@ -1636,16 +1822,21 @@ function drawGraph() {
         "white";
 
       context.lineWidth = 2;
+
       context.stroke();
     }
   );
 
+  /* 横軸の日付 */
+
   const labelIndexes = [
     ...new Set([
       0,
+
       Math.floor(
         (items.length - 1) / 2
       ),
+
       items.length - 1
     ])
   ];
@@ -1661,7 +1852,9 @@ function drawGraph() {
 
   labelIndexes.forEach(index => {
     const dateParts =
-      items[index].date.split("-");
+      items[index].date.split(
+        "-"
+      );
 
     const month =
       Number(dateParts[1]);
