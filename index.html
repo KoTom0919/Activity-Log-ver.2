@@ -7,7 +7,7 @@
 
   <title>活動記録表</title>
 
-<link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 
 <body>
@@ -21,18 +21,14 @@
       <div class="card form-card">
         <h2>活動を記録</h2>
 
-        <label for="recordDate">
-          日付
-        </label>
+        <label for="recordDate">日付</label>
 
         <input
           id="recordDate"
           type="date"
         >
 
-        <label for="recordTime">
-          時刻
-        </label>
+        <label for="recordTime">時刻</label>
 
         <div class="time-row">
           <input
@@ -50,9 +46,19 @@
           </button>
         </div>
 
-        <label for="activity">
-          活動内容
-        </label>
+        <div class="activity-label-row">
+          <label for="activity">
+            活動内容
+          </label>
+
+          <button
+            id="openRoutineButton"
+            class="routine-open-button"
+            type="button"
+          >
+            定期的な活動
+          </button>
+        </div>
 
         <textarea
           id="activity"
@@ -62,9 +68,7 @@
         ></textarea>
 
         <fieldset>
-          <legend>
-            気分
-          </legend>
+          <legend>気分</legend>
 
           <div
             id="moodButtons"
@@ -138,9 +142,7 @@
       class="page"
     >
       <div class="section-heading">
-        <h2>
-          時系列で見る
-        </h2>
+        <h2>時系列で見る</h2>
 
         <span
           id="recordCount"
@@ -207,36 +209,34 @@
       </div>
 
       <div class="activity-search">
-  <label for="activitySearchInput">
-    活動内容を検索
-  </label>
+        <label for="activitySearchInput">
+          活動内容を検索
+        </label>
 
-  <div class="search-row">
-    <input
-      id="activitySearchInput"
-      type="search"
-      placeholder="例：散歩"
-    >
+        <div class="search-row">
+          <input
+            id="activitySearchInput"
+            type="search"
+            placeholder="例：散歩"
+          >
 
-    <button
-      id="activitySearchButton"
-      class="primary-button"
-      type="button"
-    >
-      検索
-    </button>
+          <button
+            id="activitySearchButton"
+            class="primary-button"
+            type="button"
+          >
+            検索
+          </button>
 
-    <button
-      id="activitySearchResetButton"
-      class="secondary-button"
-      type="button"
-    >
-      解除
-    </button>
-  </div>
-</div>
-
-<div id="timeline" class="timeline"></div>
+          <button
+            id="activitySearchResetButton"
+            class="secondary-button"
+            type="button"
+          >
+            解除
+          </button>
+        </div>
+      </div>
 
       <div
         id="timeline"
@@ -258,9 +258,7 @@
       class="page"
     >
       <div class="card graph-card">
-        <h2>
-          気分の推移
-        </h2>
+        <h2>気分の推移</h2>
 
         <p class="graph-note">
           横軸：日時　
@@ -338,6 +336,79 @@
         </div>
       </div>
     </section>
+
+    <!-- 定期的な活動 -->
+    <div
+      id="routineModal"
+      class="modal-backdrop hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="routineModalTitle"
+      aria-hidden="true"
+    >
+      <div class="routine-modal">
+        <div class="routine-modal-header">
+          <h2 id="routineModalTitle">
+            定期的な活動
+          </h2>
+
+          <button
+            id="closeRoutineButton"
+            class="modal-close-button"
+            type="button"
+            aria-label="閉じる"
+          >
+            ×
+          </button>
+        </div>
+
+        <p class="routine-help">
+          活動を押すと「活動内容」に入力されます。
+        </p>
+
+        <div
+          id="routineList"
+          class="routine-list"
+        ></div>
+
+        <button
+          id="toggleRoutineSettingsButton"
+          class="secondary-button routine-settings-button"
+          type="button"
+        >
+          設定
+        </button>
+
+        <div
+          id="routineSettings"
+          class="routine-settings hidden"
+        >
+          <h3>よくする活動を編集</h3>
+
+          <div class="routine-add-row">
+            <input
+              id="newRoutineInput"
+              type="text"
+              maxlength="100"
+              placeholder="例：散歩を30分した"
+            >
+
+            <button
+              id="addRoutineButton"
+              class="primary-button"
+              type="button"
+            >
+              追加
+            </button>
+          </div>
+
+          <div
+            id="routineEditList"
+            class="routine-edit-list"
+          ></div>
+        </div>
+      </div>
+    </div>
   </main>
 
   <!-- 下部メニュー -->
@@ -370,6 +441,6 @@
     </button>
   </nav>
 
-  <script src="script.js"></script>
+  <script src="script.js?v=4"></script>
 </body>
 </html>

@@ -7,7 +7,13 @@
 const STORAGE_KEY =
   "activityRecords_v1";
 
+const ROUTINE_STORAGE_KEY =
+  "routineActivities_v1";
+
 let records = loadRecords();
+
+let routineActivities =
+  loadRoutineActivities();
 
 let selectedMood = null;
 let editingId = null;
@@ -18,6 +24,7 @@ let timelineFilter = {
 };
 
 let activitySearchText = "";
+let routineSettingsOpen = false;
 
 let graphFilter = {
   start: "",
@@ -64,6 +71,31 @@ const cancelEditButton =
     "cancelEditButton"
   );
 
+const routineModal =
+  document.getElementById(
+    "routineModal"
+  );
+
+const routineList =
+  document.getElementById(
+    "routineList"
+  );
+
+const routineSettings =
+  document.getElementById(
+    "routineSettings"
+  );
+
+const routineEditList =
+  document.getElementById(
+    "routineEditList"
+  );
+
+const newRoutineInput =
+  document.getElementById(
+    "newRoutineInput"
+  );
+
 /* =========================
    初期表示
 ========================= */
@@ -92,6 +124,113 @@ cancelEditButton.addEventListener(
   () => resetForm()
 );
 
+/* 定期的な活動 */
+
+document
+  .getElementById(
+    "openRoutineButton"
+  )
+  .addEventListener(
+    "click",
+    openRoutineModal
+  );
+
+document
+  .getElementById(
+    "closeRoutineButton"
+  )
+  .addEventListener(
+    "click",
+    closeRoutineModal
+  );
+
+document
+  .getElementById(
+    "toggleRoutineSettingsButton"
+  )
+  .addEventListener(
+    "click",
+    toggleRoutineSettings
+  );
+
+document
+  .getElementById(
+    "addRoutineButton"
+  )
+  .addEventListener(
+    "click",
+    addRoutineActivity
+  );
+
+newRoutineInput.addEventListener(
+  "keydown",
+  event => {
+    if (event.key === "Enter") {
+      addRoutineActivity();
+    }
+  }
+);
+
+routineModal.addEventListener(
+  "click",
+  event => {
+    if (event.target === routineModal) {
+      closeRoutineModal();
+    }
+  }
+);
+
+document.addEventListener(
+  "keydown",
+  event => {
+    if (
+      event.key === "Escape" &&
+      !routineModal.classList.contains(
+        "hidden"
+      )
+    ) {
+      closeRoutineModal();
+    }
+  }
+);
+
+routineList.addEventListener(
+  "click",
+  event => {
+    const button =
+      event.target.closest(
+        "[data-routine-index]"
+      );
+
+    if (!button) {
+      return;
+    }
+
+    const index =
+      Number(
+        button.dataset.routineIndex
+      );
+
+    activityInput.value =
+      routineActivities[index] || "";
+
+    closeRoutineModal();
+    activityInput.focus();
+  }
+);
+
+routineEditList.addEventListener(
+  "change",
+  updateRoutineActivity
+);
+
+routineEditList.addEventListener(
+  "click",
+  deleteRoutineActivity
+);
+
+/* 記録削除 */
+
 document
   .getElementById(
     "clearAllButton"
@@ -100,6 +239,8 @@ document
     "click",
     clearAllRecords
   );
+
+/* 日付フィルター */
 
 document
   .getElementById(
@@ -137,6 +278,8 @@ document
     resetGraphFilter
   );
 
+/* 印刷 */
+
 document
   .getElementById(
     "timelinePrintButton"
@@ -164,22 +307,30 @@ window.addEventListener(
   clearPrintMode
 );
 
+/* 活動内容検索 */
+
 document
-  .getElementById("activitySearchButton")
+  .getElementById(
+    "activitySearchButton"
+  )
   .addEventListener(
     "click",
     applyActivitySearch
   );
 
 document
-  .getElementById("activitySearchResetButton")
+  .getElementById(
+    "activitySearchResetButton"
+  )
   .addEventListener(
     "click",
     resetActivitySearch
   );
 
 document
-  .getElementById("activitySearchInput")
+  .getElementById(
+    "activitySearchInput"
+  )
   .addEventListener(
     "keydown",
     event => {
@@ -242,7 +393,7 @@ window.addEventListener(
 );
 
 /* =========================
-   データの読み込み
+   記録データの読み込み
 ========================= */
 
 function loadRecords() {
@@ -275,7 +426,7 @@ function loadRecords() {
 }
 
 /* =========================
-   データの保存
+   記録データの保存
 ========================= */
 
 function persistRecords() {
@@ -296,9 +447,250 @@ function persistRecords() {
   }
 }
 
-/*==========================
-   検索関数
-==========================*/
+/* =========================
+   定期的な活動
+========================= */
+
+function loadRoutineActivities() {
+  try {
+    const savedData =
+      localStorage.getItem(
+        ROUTINE_STORAGE_KEY
+      );
+
+    if (!savedData) {
+      return [];
+    }
+
+    const parsedData =
+      JSON.parse(savedData);
+
+    return Array.isArray(parsedData)
+      ? parsedData.filter(item => {
+          return (
+            typeof item === "string" &&
+            item.trim()
+          );
+        })
+      : [];
+  } catch (error) {
+    console.error(
+      "定期的な活動の読み込みに失敗しました。",
+      error
+    );
+
+    return [];
+  }
+}
+
+function persistRoutineActivities() {
+  try {
+    localStorage.setItem(
+      ROUTINE_STORAGE_KEY,
+      JSON.stringify(
+        routineActivities
+      )
+    );
+  } catch (error) {
+    console.error(
+      "定期的な活動の保存に失敗しました。",
+      error
+    );
+  }
+}
+
+function openRoutineModal() {
+  routineSettingsOpen = false;
+
+  renderRoutineActivities();
+
+  routineModal.classList.remove(
+    "hidden"
+  );
+
+  routineModal.setAttribute(
+    "aria-hidden",
+    "false"
+  );
+
+  document.body.classList.add(
+    "modal-open"
+  );
+
+  document
+    .getElementById(
+      "closeRoutineButton"
+    )
+    .focus();
+}
+
+function closeRoutineModal() {
+  routineModal.classList.add(
+    "hidden"
+  );
+
+  routineModal.setAttribute(
+    "aria-hidden",
+    "true"
+  );
+
+  document.body.classList.remove(
+    "modal-open"
+  );
+}
+
+function toggleRoutineSettings() {
+  routineSettingsOpen =
+    !routineSettingsOpen;
+
+  renderRoutineActivities();
+
+  if (routineSettingsOpen) {
+    newRoutineInput.focus();
+  }
+}
+
+function renderRoutineActivities() {
+  if (routineActivities.length > 0) {
+    routineList.innerHTML =
+      routineActivities
+        .map((activity, index) => {
+          return `
+            <button
+              class="routine-choice"
+              type="button"
+              data-routine-index="${index}"
+            >
+              ${escapeHtml(activity)}
+            </button>
+          `;
+        })
+        .join("");
+  } else {
+    routineList.innerHTML = `
+      <p class="routine-empty">
+        設定から、よくする活動を追加してください。
+      </p>
+    `;
+  }
+
+  routineSettings.classList.toggle(
+    "hidden",
+    !routineSettingsOpen
+  );
+
+  document
+    .getElementById(
+      "toggleRoutineSettingsButton"
+    )
+    .textContent =
+      routineSettingsOpen
+        ? "設定を閉じる"
+        : "設定";
+
+  routineEditList.innerHTML =
+    routineActivities
+      .map((activity, index) => {
+        return `
+          <div class="routine-edit-row">
+            <input
+              type="text"
+              maxlength="100"
+              value="${escapeHtml(activity)}"
+              data-routine-edit-index="${index}"
+              aria-label="定期的な活動を編集"
+            >
+
+            <button
+              type="button"
+              data-routine-delete-index="${index}"
+            >
+              削除
+            </button>
+          </div>
+        `;
+      })
+      .join("");
+}
+
+function addRoutineActivity() {
+  const activity =
+    newRoutineInput.value.trim();
+
+  if (!activity) {
+    newRoutineInput.focus();
+    return;
+  }
+
+  routineActivities.push(activity);
+
+  persistRoutineActivities();
+
+  newRoutineInput.value = "";
+
+  renderRoutineActivities();
+
+  newRoutineInput.focus();
+}
+
+function updateRoutineActivity(event) {
+  const input =
+    event.target.closest(
+      "[data-routine-edit-index]"
+    );
+
+  if (!input) {
+    return;
+  }
+
+  const index =
+    Number(
+      input.dataset.routineEditIndex
+    );
+
+  const activity =
+    input.value.trim();
+
+  if (!activity) {
+    renderRoutineActivities();
+    return;
+  }
+
+  routineActivities[index] =
+    activity;
+
+  persistRoutineActivities();
+  renderRoutineActivities();
+}
+
+function deleteRoutineActivity(event) {
+  const button =
+    event.target.closest(
+      "[data-routine-delete-index]"
+    );
+
+  if (!button) {
+    return;
+  }
+
+  const index =
+    Number(
+      button.dataset.routineDeleteIndex
+    );
+
+  routineActivities.splice(
+    index,
+    1
+  );
+
+  persistRoutineActivities();
+  renderRoutineActivities();
+}
+
+/* =========================
+   活動内容検索
+========================= */
+
 function applyActivitySearch() {
   activitySearchText =
     document
@@ -731,7 +1123,9 @@ function renderTimeline() {
 
   const searchWord =
     activitySearchText
-      .toLocaleLowerCase("ja-JP");
+      .toLocaleLowerCase(
+        "ja-JP"
+      );
 
   const items =
     filteredRecords(
@@ -739,7 +1133,9 @@ function renderTimeline() {
     ).filter(record => {
       const activityText =
         record.activity
-          .toLocaleLowerCase("ja-JP");
+          .toLocaleLowerCase(
+            "ja-JP"
+          );
 
       return (
         !searchWord ||
@@ -749,7 +1145,6 @@ function renderTimeline() {
       );
     });
 
-  /* 検索と日付絞り込み後の件数 */
   recordCount.textContent =
     `${items.length}件`;
 
@@ -1127,8 +1522,6 @@ function drawGraph() {
     );
   }
 
-  /* 目盛り線 */
-
   context.font =
     "12px sans-serif";
 
@@ -1180,8 +1573,6 @@ function drawGraph() {
     );
   }
 
-  /* 折れ線 */
-
   if (items.length > 1) {
     context.strokeStyle =
       "#58a98a";
@@ -1212,8 +1603,6 @@ function drawGraph() {
 
     context.stroke();
   }
-
-  /* グラフの点 */
 
   items.forEach(
     (record, index) => {
@@ -1250,8 +1639,6 @@ function drawGraph() {
       context.stroke();
     }
   );
-
-  /* 横軸の日付 */
 
   const labelIndexes = [
     ...new Set([
