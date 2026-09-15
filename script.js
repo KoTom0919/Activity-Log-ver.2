@@ -1480,7 +1480,7 @@ function buildTimelinePrintPages() {
 
   if (items.length === 0) {
     printArea.innerHTML = `
-      <section class="timeline-print-page">
+      <section class="timeline-print-document">
         <div class="timeline-print-header">
           <h2>活動記録表</h2>
           <span>0件</span>
@@ -1495,73 +1495,23 @@ function buildTimelinePrintPages() {
     return;
   }
 
-  const pages = [];
+  printArea.innerHTML = `
+    <section class="timeline-print-document">
+      <div class="timeline-print-header">
+        <h2>活動記録表</h2>
 
-  /*
-    1ページ24件で分割
-  */
+        <span>
+          ${items.length}件
+        </span>
+      </div>
 
-  for (
-    let index = 0;
-    index < items.length;
-    index += 24
-  ) {
-    pages.push(
-      items.slice(
-        index,
-        index + 24
-      )
-    );
-  }
-
-  printArea.innerHTML =
-    pages
-      .map((pageItems, pageIndex) => {
-        /*
-          左側に12件
-          右側に12件
-        */
-
-        const leftItems =
-          pageItems.slice(
-            0,
-            12
-          );
-
-        const rightItems =
-          pageItems.slice(
-            12,
-            24
-          );
-
-        return `
-          <section class="timeline-print-page">
-            <div class="timeline-print-header">
-              <h2>活動記録表</h2>
-
-              <span>
-                ${items.length}件　
-                ${pageIndex + 1}/${pages.length}ページ
-              </span>
-            </div>
-
-            <div class="timeline-print-columns">
-              <div class="timeline-print-column">
-                ${renderTimelinePrintItems(
-                  leftItems
-                )}
-              </div>
-
-              <div class="timeline-print-column">
-                ${renderTimelinePrintItems(
-                  rightItems
-                )}
-              </div>
-            </div>
-          </section>
-        `;
-      })
-      .join("");
+      <div class="timeline-print-flow">
+        ${renderTimelinePrintItems(
+          items
+        )}
+      </div>
+    </section>
+  `;
 }
 
 /* 印刷用の記録 */
@@ -1575,7 +1525,9 @@ function renderTimelinePrintItems(
         <article class="timeline-print-item">
           <div class="timeline-print-record-head">
             <time
-              datetime="${record.date}T${record.time}"
+              datetime="${record.date}T${getSortableTime(
+                record.time
+              )}"
             >
               ${formatDate(record.date)}
               ${record.time}
@@ -1586,10 +1538,11 @@ function renderTimelinePrintItems(
             </span>
           </div>
 
-          <p>${escapeHtml(
-        record.activity
-      )
-        }</p>
+          <p>${
+            escapeHtml(
+              record.activity
+            )
+          }</p>
         </article>
       `;
     })
