@@ -231,134 +231,111 @@ fieldset legend { padding: 0; }
   }
 }
 /* スマホ版の日付フィルター配置 */
-@media screen and (max-width: 520px) {
-  .date-filter {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0;
-  }
+/* 日付フィルターの基本配置 */
 
-  .filter-date-field {
-    width: 100%;
-  }
-
-  .filter-date-field input {
-    width: 100%;
-  }
-
-  /* 「～」を中央に配置 */
-  .filter-separator {
-    display: block;
-    width: 100%;
-    padding: 7px 0;
-    text-align: center;
-    line-height: 1;
-  }
-
-  /* 終了日とボタンの間に余白 */
-  .filter-actions {
-    display: flex;
-    width: 100%;
-    margin-top: 14px;
-    gap: 7px;
-  }
-
-  .filter-actions button {
-    flex: 1;
-    min-width: 0;
-    padding: 10px 5px;
-    white-space: nowrap;
-  }
+.date-filter {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin-bottom: 18px;
+  padding: 14px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-sizing: border-box;
+  overflow: hidden;
 }
-/* 日付フィルターを強制的に縦配置 */
-@media screen and (max-width: 900px) {
-  .date-filter {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 0 !important;
-  }
 
-  .date-filter .filter-date-field {
-    display: block !important;
-    width: 100% !important;
-  }
-
-  .date-filter .filter-date-field input {
-    display: block !important;
-    width: 100% !important;
-    max-width: none !important;
-  }
-
-  /* 「～」を中央寄せ */
-  .date-filter .filter-separator {
-    display: block !important;
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 10px 0 !important;
-    text-align: center !important;
-    align-self: center !important;
-    line-height: 1 !important;
-  }
-
-  /* 終了日の入力欄とボタンの間 */
-  .date-filter .filter-actions {
-    display: flex !important;
-    width: 100% !important;
-    margin-top: 16px !important;
-    gap: 7px !important;
-  }
-
-  .date-filter .filter-actions button {
-    flex: 1 1 0 !important;
-    min-width: 0 !important;
-    margin: 0 !important;
-    padding: 10px 4px !important;
-    white-space: nowrap !important;
-  }
+.filter-date-field {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
-/* 日付入力欄の右側へのはみ出しを修正 */
+
+.filter-date-field label {
+  margin: 14px 0 6px;
+}
+
+.filter-actions {
+  display: flex;
+  width: 100%;
+  max-width: 100%;
+  margin-top: 16px;
+  gap: 7px;
+}
+
+.filter-actions button {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 10px 4px;
+  white-space: nowrap;
+}
+
+.filter-message {
+  margin: 8px 0 0;
+  color: var(--danger);
+  text-align: center;
+}
+
+/* 日付欄共通 */
+
 input[type="date"] {
   display: block !important;
-  width: 100% !important;
-  max-width: 100% !important;
+  width: calc(100% - 6px) !important;
+  max-width: calc(100% - 6px) !important;
   min-width: 0 !important;
-  margin: 0 auto !important;
-  padding-right: 10px !important;
-  padding-left: 10px !important;
+  margin-right: auto !important;
+  margin-left: auto !important;
+  padding: 10px !important;
   box-sizing: border-box !important;
   text-align: center !important;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
-/* iPhone・Safariの日付文字を中央寄せ */
 input[type="date"]::-webkit-date-and-time-value {
   width: 100% !important;
   min-width: 0 !important;
   margin: 0 !important;
+  padding: 0 !important;
   text-align: center !important;
 }
 
-/* 日付欄を囲む枠もはみ出させない */
-.filter-date-field,
-.date-filter {
-  width: 100% !important;
-  max-width: 100% !important;
-  min-width: 0 !important;
-  box-sizing: border-box !important;
-  overflow: hidden !important;
-}
+/* スマホ表示 */
 
-/* スマホ版 */
 @media screen and (max-width: 900px) {
-  input[type="date"] {
-    inline-size: 100% !important;
-    max-inline-size: 100% !important;
-    min-inline-size: 0 !important;
+  html,
+  body {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
   }
 
+  main {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .page,
+  .card,
+  .date-filter,
   .filter-date-field {
-    display: block !important;
-    padding: 0 !important;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .date-filter {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  input[type="date"] {
+    width: calc(100% - 6px) !important;
+    max-width: calc(100% - 6px) !important;
+    min-width: 0 !important;
   }
 }
