@@ -963,3 +963,58 @@ input[type="date"]::-webkit-date-and-time-value {
     padding: 8px 4px;
   }
 }
+/* スマホ版：時系列の1件分を約75％に縮小 */
+
+@media screen and (max-width: 520px) {
+  .timeline {
+    padding-left: 21px;
+  }
+
+  .timeline::before {
+    left: 6px;
+  }
+
+  .timeline-item {
+    margin-bottom: 8px;
+    padding: 10px 11px;
+    border-radius: 9px;
+  }
+
+  .timeline-item::before {
+    top: 14px;
+    left: -19px;
+    width: 9px;
+    height: 9px;
+    border-width: 2px;
+  }
+
+  .record-head {
+    gap: 5px;
+  }
+
+  .record-date {
+    font-size: 0.78rem;
+    line-height: 1.2;
+  }
+
+  .mood-badge {
+    padding: 3px 7px;
+    font-size: 0.72rem;
+  }
+
+  .activity-text {
+    margin: 6px 0;
+    font-size: 0.86rem;
+    line-height: 1.35;
+  }
+
+  .record-actions {
+    gap: 5px;
+  }
+
+  .record-actions button {
+    min-height: 30px;
+    padding: 3px 9px;
+    font-size: 0.76rem;
+  }
+}
