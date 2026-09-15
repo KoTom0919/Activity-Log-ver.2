@@ -1498,7 +1498,7 @@ function buildTimelinePrintPages() {
   const pages = [];
 
   /*
-    1ページ20件ずつに分割する
+    1ページ24件で分割
   */
 
   for (
@@ -1518,8 +1518,8 @@ function buildTimelinePrintPages() {
     pages
       .map((pageItems, pageIndex) => {
         /*
-          左側に最初の10件
-          右側に次の10件
+          左側に12件
+          右側に12件
         */
 
         const leftItems =
@@ -1548,14 +1548,14 @@ function buildTimelinePrintPages() {
             <div class="timeline-print-columns">
               <div class="timeline-print-column">
                 ${renderTimelinePrintItems(
-          leftItems
-        )}
+                  leftItems
+                )}
               </div>
 
               <div class="timeline-print-column">
                 ${renderTimelinePrintItems(
-          rightItems
-        )}
+                  rightItems
+                )}
               </div>
             </div>
           </section>
