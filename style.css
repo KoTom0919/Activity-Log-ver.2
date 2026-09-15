@@ -339,3 +339,58 @@ input[type="date"]::-webkit-date-and-time-value {
     min-width: 0 !important;
   }
 }
+/* 活動内容の検索欄 */
+
+.activity-search {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin-bottom: 18px;
+  padding: 14px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
+.activity-search label {
+  margin: 0 0 7px;
+}
+
+.search-row {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    auto
+    auto;
+  gap: 7px;
+}
+
+.search-row input {
+  min-width: 0;
+}
+
+.search-row button {
+  min-width: 72px;
+}
+
+/* スマホ表示 */
+
+@media screen and (max-width: 520px) {
+  .activity-search {
+    padding: 11px 8px;
+  }
+
+  .search-row {
+    grid-template-columns:
+      minmax(0, 1fr)
+      62px
+      62px;
+    gap: 5px;
+  }
+
+  .search-row button {
+    min-width: 0;
+    padding: 8px 4px;
+  }
+}

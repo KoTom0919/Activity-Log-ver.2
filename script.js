@@ -17,6 +17,8 @@ let timelineFilter = {
   end: ""
 };
 
+let activitySearchText = "";
+
 let graphFilter = {
   start: "",
   end: ""
@@ -162,6 +164,31 @@ window.addEventListener(
   clearPrintMode
 );
 
+document
+  .getElementById("activitySearchButton")
+  .addEventListener(
+    "click",
+    applyActivitySearch
+  );
+
+document
+  .getElementById("activitySearchResetButton")
+  .addEventListener(
+    "click",
+    resetActivitySearch
+  );
+
+document
+  .getElementById("activitySearchInput")
+  .addEventListener(
+    "keydown",
+    event => {
+      if (event.key === "Enter") {
+        applyActivitySearch();
+      }
+    }
+  );
+
 /* 気分ボタン */
 
 moodButtons.forEach(button => {
@@ -267,6 +294,31 @@ function persistRecords() {
       "記録を保存できませんでした。"
     );
   }
+}
+
+/*==========================
+   検索関数
+==========================*/
+function applyActivitySearch() {
+  activitySearchText =
+    document
+      .getElementById(
+        "activitySearchInput"
+      )
+      .value
+      .trim();
+
+  renderTimeline();
+}
+
+function resetActivitySearch() {
+  document.getElementById(
+    "activitySearchInput"
+  ).value = "";
+
+  activitySearchText = "";
+
+  renderTimeline();
 }
 
 /* =========================
@@ -677,11 +729,27 @@ function renderTimeline() {
       "clearAllButton"
     );
 
+  const searchWord =
+    activitySearchText
+      .toLocaleLowerCase("ja-JP");
+
   const items =
     filteredRecords(
       timelineFilter
-    );
+    ).filter(record => {
+      const activityText =
+        record.activity
+          .toLocaleLowerCase("ja-JP");
 
+      return (
+        !searchWord ||
+        activityText.includes(
+          searchWord
+        )
+      );
+    });
+
+  /* 検索と日付絞り込み後の件数 */
   recordCount.textContent =
     `${items.length}件`;
 
@@ -691,10 +759,13 @@ function renderTimeline() {
   );
 
   if (items.length === 0) {
-    const emptyText =
-      records.length > 0
-        ? "指定した期間の記録がありません。"
-        : "まだ記録がありません。";
+    let emptyText =
+      "まだ記録がありません。";
+
+    if (records.length > 0) {
+      emptyText =
+        "条件に一致する記録がありません。";
+    }
 
     timeline.innerHTML = `
       <p class="empty-message">
