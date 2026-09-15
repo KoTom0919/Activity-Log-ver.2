@@ -641,7 +641,32 @@ fieldset legend {
 
   /* A4を左右2列に分割 */
 
- 
+ /* 左右2列の印刷レイアウト */
+
+.timeline-print-flow {
+  width: 100%;
+  column-count: 2;
+  column-width: auto;
+  column-gap: 3mm;
+  column-fill: auto;
+  column-rule: 0.2mm solid #ddd;
+}
+
+/* 記録を途中で分割しない */
+
+.timeline-print-item {
+  display: inline-block;
+  width: 100%;
+  margin: 0 0 1mm;
+  padding: 1.5mm 1.8mm;
+  overflow: hidden;
+  vertical-align: top;
+  border: 0.25mm solid #aaa;
+  border-radius: 1.2mm;
+  break-inside: avoid;
+  page-break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+}
 
   .timeline-print-page:last-child {
     break-after: auto;
