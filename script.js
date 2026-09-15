@@ -116,6 +116,44 @@ document
     "click",
     setCurrentDateTime
   );
+/* 時刻は数字またはコロンのみ入力可能 */
+
+timeInput.addEventListener(
+  "input",
+  () => {
+    timeInput.value =
+      timeInput.value
+        .replace(
+          /[^0-9:]/g,
+          ""
+        )
+        .slice(
+          0,
+          5
+        );
+  }
+);
+
+/* 入力欄から離れたときに800を8:00へ変換 */
+
+timeInput.addEventListener(
+  "blur",
+  () => {
+    if (!timeInput.value.trim()) {
+      return;
+    }
+
+    const normalizedTime =
+      normalizeTypedTime(
+        timeInput.value
+      );
+
+    if (normalizedTime) {
+      timeInput.value =
+        normalizedTime;
+    }
+  }
+);
 
 saveButton.addEventListener(
   "click",
@@ -834,7 +872,9 @@ function saveRecord() {
     dateInput.value;
 
   const time =
-    timeInput.value;
+    normalizeTypedTime(
+      timeInput.value
+    );
 
   const activity =
     activityInput.value.trim();
@@ -849,11 +889,14 @@ function saveRecord() {
 
   if (!time) {
     showMessage(
-      "時刻を入力してください。"
+      "時刻を800や13:30の形式で入力してください。"
     );
 
     return;
   }
+
+  timeInput.value =
+    time;
 
   if (!activity) {
     showMessage(
@@ -968,10 +1011,14 @@ function sortedRecords() {
   return [...records].sort(
     (first, second) => {
       const firstDateTime =
-        `${first.date}T${first.time}`;
+        `${first.date}T${getSortableTime(
+          first.time
+        )}`;
 
       const secondDateTime =
-        `${second.date}T${second.time}`;
+        `${second.date}T${getSortableTime(
+          second.time
+        )}`;
 
       return firstDateTime.localeCompare(
         secondDateTime
@@ -1643,7 +1690,9 @@ function drawGraph() {
   const times =
     items.map(record => {
       return new Date(
-        `${record.date}T${record.time}:00`
+        `${record.date}T${getSortableTime(
+          record.time
+        )}:00`
       ).getTime();
     });
 
@@ -1964,4 +2013,125 @@ function debounce(
       );
     }, delay);
   };
+}
+/* =========================
+   タイピングされた時刻の変換
+========================= */
+
+function normalizeTypedTime(value) {
+  const input =
+    String(value)
+      .trim()
+      .replace(/\s/g, "");
+
+  if (!input) {
+    return null;
+  }
+
+  let hourText = "";
+  let minuteText = "";
+
+  if (input.includes(":")) {
+    const parts =
+      input.split(":");
+
+    if (parts.length !== 2) {
+      return null;
+    }
+
+    hourText =
+      parts[0];
+
+    minuteText =
+      parts[1];
+  } else {
+    const numbers =
+      input.replace(
+        /\D/g,
+        ""
+      );
+
+    if (
+      numbers.length === 1 ||
+      numbers.length === 2
+    ) {
+      hourText =
+        numbers;
+
+      minuteText =
+        "00";
+    } else if (
+      numbers.length === 3 ||
+      numbers.length === 4
+    ) {
+      hourText =
+        numbers.slice(
+          0,
+          -2
+        );
+
+      minuteText =
+        numbers.slice(
+          -2
+        );
+    } else {
+      return null;
+    }
+  }
+
+  if (
+    !/^\d{1,2}$/.test(hourText) ||
+    !/^\d{1,2}$/.test(minuteText)
+  ) {
+    return null;
+  }
+
+  const hour =
+    Number(hourText);
+
+  const minute =
+    Number(minuteText);
+
+  if (
+    hour < 0 ||
+    hour > 23 ||
+    minute < 0 ||
+    minute > 59
+  ) {
+    return null;
+  }
+
+  return (
+    `${hour}:` +
+    String(minute).padStart(
+      2,
+      "0"
+    )
+  );
+}
+
+/* 並べ替えやグラフ用に08:00形式へ変換 */
+
+function getSortableTime(value) {
+  const normalizedTime =
+    normalizeTypedTime(value);
+
+  if (!normalizedTime) {
+    return "00:00";
+  }
+
+  const [
+    hour,
+    minute
+  ] =
+    normalizedTime.split(":");
+
+  return (
+    String(hour).padStart(
+      2,
+      "0"
+    ) +
+    ":" +
+    minute
+  );
 }
