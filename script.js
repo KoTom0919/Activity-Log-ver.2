@@ -990,12 +990,12 @@ function filteredRecords(filter) {
       const afterStart =
         !filter.start ||
         record.date >=
-          filter.start;
+        filter.start;
 
       const beforeEnd =
         !filter.end ||
         record.date <=
-          filter.end;
+        filter.end;
 
       return (
         afterStart &&
@@ -1230,11 +1230,10 @@ function renderTimeline() {
             </span>
           </div>
 
-          <p class="activity-text">${
-            escapeHtml(
-              record.activity
-            )
-          }</p>
+          <p class="activity-text">${escapeHtml(
+        record.activity
+      )
+        }</p>
 
           <div class="record-actions">
             <button
@@ -1366,7 +1365,7 @@ function showPage(pageId) {
       button.classList.toggle(
         "active",
         button.dataset.page ===
-          pageId
+        pageId
       );
     });
 
@@ -1458,12 +1457,12 @@ function buildTimelinePrintPages() {
   for (
     let index = 0;
     index < items.length;
-    index += 20
+    index += 24
   ) {
     pages.push(
       items.slice(
         index,
-        index + 20
+        index + 24
       )
     );
   }
@@ -1479,13 +1478,13 @@ function buildTimelinePrintPages() {
         const leftItems =
           pageItems.slice(
             0,
-            10
+            12
           );
 
         const rightItems =
           pageItems.slice(
-            10,
-            20
+            12,
+            24
           );
 
         return `
@@ -1502,14 +1501,14 @@ function buildTimelinePrintPages() {
             <div class="timeline-print-columns">
               <div class="timeline-print-column">
                 ${renderTimelinePrintItems(
-                  leftItems
-                )}
+          leftItems
+        )}
               </div>
 
               <div class="timeline-print-column">
                 ${renderTimelinePrintItems(
-                  rightItems
-                )}
+          rightItems
+        )}
               </div>
             </div>
           </section>
@@ -1540,11 +1539,10 @@ function renderTimelinePrintItems(
             </span>
           </div>
 
-          <p>${
-            escapeHtml(
-              record.activity
-            )
-          }</p>
+          <p>${escapeHtml(
+        record.activity
+      )
+        }</p>
         </article>
       `;
     })
@@ -1872,16 +1870,16 @@ function drawGraph() {
       `${month}/${day}`,
       x,
       height -
-        padding.bottom +
-        13
+      padding.bottom +
+      13
     );
 
     context.fillText(
       items[index].time,
       x,
       height -
-        padding.bottom +
-        28
+      padding.bottom +
+      28
     );
   });
 }

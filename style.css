@@ -688,8 +688,8 @@ fieldset legend {
   .timeline-print-column {
     display: grid;
     grid-template-rows:
-      repeat(10, minmax(0, 1fr));
-    gap: 1mm;
+      repeat(12, minmax(0, 1fr));
+    gap: 0.7mm;
     min-width: 0;
     min-height: 0;
   }
@@ -697,10 +697,10 @@ fieldset legend {
   .timeline-print-item {
     min-width: 0;
     min-height: 0;
-    padding: 1.6mm 2mm;
+    padding: 1mm 1.5mm;
     overflow: hidden;
     border: 0.25mm solid #aaa;
-    border-radius: 1.5mm;
+    border-radius: 1.2mm;
     break-inside: avoid;
     page-break-inside: avoid;
   }
@@ -709,10 +709,10 @@ fieldset legend {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 2mm;
-    font-size: 7.3pt;
+    gap: 1mm;
+    font-size: 6.5pt;
     font-weight: 700;
-    line-height: 1.2;
+    line-height: 1.1;
   }
 
   .timeline-print-record-head span {
@@ -721,14 +721,14 @@ fieldset legend {
 
   .timeline-print-item p {
     display: -webkit-box;
-    margin: 1.2mm 0 0;
+    margin: 0.7mm 0 0;
     overflow: hidden;
-    font-size: 8pt;
-    line-height: 1.25;
+    font-size: 7pt;
+    line-height: 1.15;
     overflow-wrap: anywhere;
     white-space: pre-wrap;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 2;
   }
 
   .timeline-print-empty {
