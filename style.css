@@ -1,0 +1,320 @@
+:root {
+  --main: #58a98a;
+  --main-dark: #397c65;
+  --main-light: #e9f5f0;
+  --text: #26332e;
+  --muted: #68756f;
+  --border: #d6e1dc;
+  --danger: #c64b4b;
+  --shadow: 0 5px 18px rgba(45, 85, 69, 0.09);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-width: 320px;
+  color: var(--text);
+  background: #f4f8f6;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", sans-serif;
+}
+
+button, input, textarea { font: inherit; }
+button { cursor: pointer; }
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 15px 20px;
+  color: white;
+  text-align: center;
+  background: var(--main);
+  box-shadow: 0 2px 8px rgba(0,0,0,.12);
+}
+
+.app-header h1 { margin: 0; font-size: 1.35rem; }
+
+main {
+  width: min(760px, 100%);
+  min-height: calc(100vh - 130px);
+  margin: 0 auto;
+  padding: 22px 16px 100px;
+}
+
+.page { display: none; }
+.page.active { display: block; animation: fade .18s ease; }
+@keyframes fade { from { opacity: .35; } to { opacity: 1; } }
+
+.card {
+  padding: 22px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+}
+
+h2 { margin: 0 0 18px; font-size: 1.25rem; }
+label, legend { display: block; margin: 15px 0 7px; font-weight: 700; }
+
+input, textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 12px;
+  color: var(--text);
+  background: white;
+  border: 1.5px solid #b9c9c2;
+  border-radius: 9px;
+  outline: none;
+}
+
+input:focus, textarea:focus { border-color: var(--main); box-shadow: 0 0 0 3px rgba(88,169,138,.15); }
+textarea { resize: vertical; }
+.time-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+
+fieldset { margin: 18px 0 0; padding: 0; border: 0; }
+fieldset legend { padding: 0; }
+
+.mood-buttons { display: grid; grid-template-columns: repeat(7, 1fr); gap: 7px; }
+.mood-buttons button {
+  min-height: 46px;
+  padding: 6px 2px;
+  color: var(--text);
+  background: #f4f6f5;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  font-weight: 700;
+}
+.mood-buttons button.selected { color: white; background: var(--main); border-color: var(--main-dark); transform: translateY(-2px); }
+.mood-guide { margin: 8px 0 0; color: var(--muted); font-size: .78rem; }
+
+.primary-button, .secondary-button, .sub-button, .danger-button {
+  min-height: 46px;
+  padding: 10px 16px;
+  border-radius: 9px;
+  font-weight: 700;
+}
+.primary-button { flex: 1; color: white; background: var(--main); border: 0; }
+.primary-button:hover { background: var(--main-dark); }
+.secondary-button, .sub-button { color: var(--main-dark); background: var(--main-light); border: 1px solid var(--main); }
+.form-actions { display: flex; gap: 8px; margin-top: 18px; }
+.message { min-height: 1.4em; margin: 12px 0 -8px; color: var(--danger); font-size: .9rem; }
+.message.success { color: var(--main-dark); }
+.hidden { display: none !important; }
+
+.section-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.section-heading h2 { margin: 0; }
+.count-badge { padding: 5px 10px; color: var(--main-dark); background: var(--main-light); border-radius: 999px; font-size: .85rem; }
+
+.timeline { position: relative; padding-left: 25px; }
+.timeline::before { content: ""; position: absolute; top: 9px; bottom: 9px; left: 8px; width: 2px; background: #abd3c3; }
+.timeline-item { position: relative; margin-bottom: 13px; padding: 16px; background: white; border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); }
+.timeline-item::before { content: ""; position: absolute; top: 20px; left: -23px; width: 11px; height: 11px; background: var(--main); border: 3px solid #f4f8f6; border-radius: 50%; }
+.record-head { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+.record-date { color: var(--main-dark); font-weight: 700; }
+.mood-badge { flex: 0 0 auto; padding: 5px 9px; color: white; border-radius: 999px; font-size: .84rem; font-weight: 700; }
+.activity-text { margin: 12px 0; line-height: 1.7; overflow-wrap: anywhere; white-space: pre-wrap; }
+.record-actions { display: flex; justify-content: flex-end; gap: 7px; }
+.record-actions button { padding: 6px 11px; color: var(--main-dark); background: white; border: 1px solid var(--border); border-radius: 7px; }
+.record-actions .delete-button { color: var(--danger); }
+.empty-message { padding: 35px 12px; color: var(--muted); text-align: center; }
+.danger-button { display: block; margin: 25px auto 0; color: var(--danger); background: white; border: 1px solid #dda7a7; }
+
+.graph-card { padding: 18px 12px; }
+.graph-card h2 { margin-left: 8px; }
+.graph-note { margin: -10px 8px 15px; color: var(--muted); font-size: .82rem; }
+.canvas-wrap { position: relative; width: 100%; min-height: 360px; }
+#moodChart { display: block; width: 100%; height: 360px; }
+
+.bottom-nav {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  background: white;
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -3px 12px rgba(0,0,0,.08);
+}
+.nav-button { min-height: 67px; color: var(--muted); background: white; border: 0; font-size: .78rem; font-weight: 700; }
+.nav-button span { display: block; margin-bottom: 2px; font-size: 1.25rem; }
+.nav-button.active { color: var(--main-dark); background: var(--main-light); }
+
+@media (max-width: 520px) {
+  main { padding: 14px 10px 92px; }
+  .card { padding: 17px 13px; border-radius: 12px; }
+  .mood-buttons { gap: 4px; }
+  .mood-buttons button { min-height: 43px; font-size: .86rem; }
+  .time-row { grid-template-columns: minmax(0, 1fr) 96px; }
+  .sub-button { padding: 8px; font-size: .86rem; }
+  .canvas-wrap, #moodChart { min-height: 330px; height: 330px; }
+}
+/* 印刷ボタン */
+
+.print-button {
+  min-height: 46px;
+  padding: 10px 16px;
+  color: white;
+  background: #667b72;
+  border: 1px solid #667b72;
+  border-radius: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.print-button:hover {
+  background: #50635b;
+}
+
+/* 印刷時の表示 */
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+
+  body {
+    min-width: 0;
+    color: #111;
+    background: white;
+  }
+
+  .app-header,
+  .bottom-nav,
+  .date-filter,
+  .record-actions,
+  .danger-button {
+    display: none !important;
+  }
+
+  main {
+    width: 100%;
+    min-height: 0;
+    padding: 0;
+  }
+
+  .page {
+    display: none !important;
+  }
+
+  body.print-timeline #timelinePage {
+    display: block !important;
+  }
+
+  body.print-graph #graphPage {
+    display: block !important;
+  }
+
+  .section-heading {
+    margin-bottom: 10px;
+  }
+
+  .timeline-item {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    box-shadow: none;
+  }
+
+  .graph-card {
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .canvas-wrap,
+  #moodChart {
+    width: 100% !important;
+    height: 520px !important;
+  }
+}
+/* スマホ版の日付フィルター配置 */
+@media screen and (max-width: 520px) {
+  .date-filter {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+
+  .filter-date-field {
+    width: 100%;
+  }
+
+  .filter-date-field input {
+    width: 100%;
+  }
+
+  /* 「～」を中央に配置 */
+  .filter-separator {
+    display: block;
+    width: 100%;
+    padding: 7px 0;
+    text-align: center;
+    line-height: 1;
+  }
+
+  /* 終了日とボタンの間に余白 */
+  .filter-actions {
+    display: flex;
+    width: 100%;
+    margin-top: 14px;
+    gap: 7px;
+  }
+
+  .filter-actions button {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 5px;
+    white-space: nowrap;
+  }
+}
+/* 日付フィルターを強制的に縦配置 */
+@media screen and (max-width: 900px) {
+  .date-filter {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0 !important;
+  }
+
+  .date-filter .filter-date-field {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .date-filter .filter-date-field input {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  /* 「～」を中央寄せ */
+  .date-filter .filter-separator {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 10px 0 !important;
+    text-align: center !important;
+    align-self: center !important;
+    line-height: 1 !important;
+  }
+
+  /* 終了日の入力欄とボタンの間 */
+  .date-filter .filter-actions {
+    display: flex !important;
+    width: 100% !important;
+    margin-top: 16px !important;
+    gap: 7px !important;
+  }
+
+  .date-filter .filter-actions button {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 10px 4px !important;
+    white-space: nowrap !important;
+  }
+}

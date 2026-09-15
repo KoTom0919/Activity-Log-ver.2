@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#58a98a">
+
+  <title>活動記録表</title>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <header class="app-header">
+    <h1>活動記録表</h1>
+  </header>
+
+  <main>
+    <!-- 記録入力画面 -->
+    <section id="inputPage" class="page active">
+      <div class="card form-card">
+        <h2>活動を記録</h2>
+
+        <label for="recordDate">
+          日付
+        </label>
+
+        <input
+          id="recordDate"
+          type="date"
+        >
+
+        <label for="recordTime">
+          時刻
+        </label>
+
+        <div class="time-row">
+          <input
+            id="recordTime"
+            type="time"
+            step="60"
+          >
+
+          <button
+            id="nowButton"
+            class="sub-button"
+            type="button"
+          >
+            現在時刻
+          </button>
+        </div>
+
+        <label for="activity">
+          活動内容
+        </label>
+
+        <textarea
+          id="activity"
+          rows="4"
+          maxlength="300"
+          placeholder="例：散歩を30分した"
+        ></textarea>
+
+        <fieldset>
+          <legend>
+            気分
+          </legend>
+
+          <div
+            id="moodButtons"
+            class="mood-buttons"
+          >
+            <button type="button" data-mood="-3">
+              −3
+            </button>
+
+            <button type="button" data-mood="-2">
+              −2
+            </button>
+
+            <button type="button" data-mood="-1">
+              −1
+            </button>
+
+            <button type="button" data-mood="0">
+              0
+            </button>
+
+            <button type="button" data-mood="1">
+              ＋1
+            </button>
+
+            <button type="button" data-mood="2">
+              ＋2
+            </button>
+
+            <button type="button" data-mood="3">
+              ＋3
+            </button>
+          </div>
+
+          <p class="mood-guide">
+            −3：とても悪い　
+            0：普通　
+            ＋3：とても良い
+          </p>
+        </fieldset>
+
+        <p
+          id="formMessage"
+          class="message"
+          aria-live="polite"
+        ></p>
+
+        <div class="form-actions">
+          <button
+            id="cancelEditButton"
+            class="secondary-button hidden"
+            type="button"
+          >
+            編集をキャンセル
+          </button>
+
+          <button
+            id="saveButton"
+            class="primary-button"
+            type="button"
+          >
+            記録する
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 時系列画面 -->
+    <section
+      id="timelinePage"
+      class="page"
+    >
+      <div class="section-heading">
+        <h2>
+          時系列で見る
+        </h2>
+
+        <span
+          id="recordCount"
+          class="count-badge"
+        >
+          0件
+        </span>
+      </div>
+
+      <div class="date-filter">
+        <div class="filter-date-field">
+          <label for="timelineStartDate">
+            開始日
+          </label>
+
+          <input
+            id="timelineStartDate"
+            type="date"
+          >
+        </div>
+
+        <div class="filter-date-field">
+          <label for="timelineEndDate">
+            終了日
+          </label>
+
+          <input
+            id="timelineEndDate"
+            type="date"
+          >
+        </div>
+
+        <div class="filter-actions">
+          <button
+            id="timelineFilterButton"
+            class="primary-button"
+            type="button"
+          >
+            表示
+          </button>
+
+          <button
+            id="timelineResetButton"
+            class="secondary-button"
+            type="button"
+          >
+            全て表示
+          </button>
+
+          <button
+            id="timelinePrintButton"
+            class="print-button"
+            type="button"
+          >
+            印刷する
+          </button>
+        </div>
+
+        <p
+          id="timelineFilterMessage"
+          class="filter-message"
+          aria-live="polite"
+        ></p>
+      </div>
+
+      <div
+        id="timeline"
+        class="timeline"
+      ></div>
+
+      <button
+        id="clearAllButton"
+        class="danger-button"
+        type="button"
+      >
+        すべての記録を削除
+      </button>
+    </section>
+
+    <!-- グラフ画面 -->
+    <section
+      id="graphPage"
+      class="page"
+    >
+      <div class="card graph-card">
+        <h2>
+          気分の推移
+        </h2>
+
+        <p class="graph-note">
+          横軸：日時　
+          縦軸：気分（−3〜＋3）
+        </p>
+
+        <div class="date-filter">
+          <div class="filter-date-field">
+            <label for="graphStartDate">
+              開始日
+            </label>
+
+            <input
+              id="graphStartDate"
+              type="date"
+            >
+          </div>
+
+          <div class="filter-date-field">
+            <label for="graphEndDate">
+              終了日
+            </label>
+
+            <input
+              id="graphEndDate"
+              type="date"
+            >
+          </div>
+
+          <div class="filter-actions">
+            <button
+              id="graphFilterButton"
+              class="primary-button"
+              type="button"
+            >
+              表示
+            </button>
+
+            <button
+              id="graphResetButton"
+              class="secondary-button"
+              type="button"
+            >
+              全て表示
+            </button>
+
+            <button
+              id="graphPrintButton"
+              class="print-button"
+              type="button"
+            >
+              印刷する
+            </button>
+          </div>
+
+          <p
+            id="graphFilterMessage"
+            class="filter-message"
+            aria-live="polite"
+          ></p>
+        </div>
+
+        <div class="canvas-wrap">
+          <canvas
+            id="moodChart"
+            aria-label="日時ごとの気分グラフ"
+          ></canvas>
+
+          <p
+            id="graphEmpty"
+            class="empty-message"
+          >
+            記録するとグラフが表示されます。
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 下部メニュー -->
+  <nav class="bottom-nav">
+    <button
+      type="button"
+      class="nav-button active"
+      data-page="inputPage"
+    >
+      <span>✏️</span>
+      記録する
+    </button>
+
+    <button
+      type="button"
+      class="nav-button"
+      data-page="timelinePage"
+    >
+      <span>🕒</span>
+      時系列
+    </button>
+
+    <button
+      type="button"
+      class="nav-button"
+      data-page="graphPage"
+    >
+      <span>📈</span>
+      グラフ
+    </button>
+  </nav>
+
+  <script src="script.js"></script>
+</body>
+</html>
