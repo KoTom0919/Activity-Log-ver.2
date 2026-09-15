@@ -3,12 +3,23 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#58a98a">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="theme-color"
+    content="#58a98a"
+  >
 
   <title>活動記録表</title>
 
-  <link rel="stylesheet" href="style.css?v=9">
+  <link
+    rel="stylesheet"
+    href="style.css?v=10"
+  >
 </head>
 
 <body>
@@ -18,7 +29,10 @@
 
   <main>
     <!-- 記録入力画面 -->
-    <section id="inputPage" class="page active">
+    <section
+      id="inputPage"
+      class="page active"
+    >
       <div class="card form-card">
         <h2>活動を記録</h2>
 
@@ -26,17 +40,31 @@
           日付
         </label>
 
-        <input id="recordDate" type="date">
+        <input
+          id="recordDate"
+          type="date"
+        >
 
         <label for="recordTime">
           時刻
         </label>
 
         <div class="time-row">
-          <input id="recordTime" type="text" inputmode="numeric" pattern="[0-9:]*" maxlength="5" placeholder="例：800"
-            autocomplete="off">
+          <input
+            id="recordTime"
+            type="text"
+            inputmode="numeric"
+            pattern="[0-9:]*"
+            maxlength="5"
+            placeholder="例：800"
+            autocomplete="off"
+          >
 
-          <button id="nowButton" class="sub-button" type="button">
+          <button
+            id="nowButton"
+            class="sub-button"
+            type="button"
+          >
             現在時刻
           </button>
         </div>
@@ -46,44 +74,77 @@
             活動内容
           </label>
 
-          <button id="openRoutineButton" class="routine-open-button" type="button">
+          <button
+            id="openRoutineButton"
+            class="routine-open-button"
+            type="button"
+          >
             定期的な活動
           </button>
         </div>
 
-        <textarea id="activity" rows="4" maxlength="300" placeholder="例：散歩を30分した"></textarea>
+        <textarea
+          id="activity"
+          rows="4"
+          maxlength="300"
+          placeholder="例：散歩を30分した"
+        ></textarea>
 
         <fieldset>
           <legend>
             気分
           </legend>
 
-          <div id="moodButtons" class="mood-buttons">
-            <button type="button" data-mood="-3">
+          <div
+            id="moodButtons"
+            class="mood-buttons"
+          >
+            <button
+              type="button"
+              data-mood="-3"
+            >
               −3
             </button>
 
-            <button type="button" data-mood="-2">
+            <button
+              type="button"
+              data-mood="-2"
+            >
               −2
             </button>
 
-            <button type="button" data-mood="-1">
+            <button
+              type="button"
+              data-mood="-1"
+            >
               −1
             </button>
 
-            <button type="button" data-mood="0">
+            <button
+              type="button"
+              data-mood="0"
+            >
               0
             </button>
 
-            <button type="button" data-mood="1">
+            <button
+              type="button"
+              data-mood="1"
+            >
               ＋1
             </button>
 
-            <button type="button" data-mood="2">
+            <button
+              type="button"
+              data-mood="2"
+            >
               ＋2
             </button>
 
-            <button type="button" data-mood="3">
+            <button
+              type="button"
+              data-mood="3"
+            >
               ＋3
             </button>
           </div>
@@ -95,14 +156,26 @@
           </p>
         </fieldset>
 
-        <p id="formMessage" class="message" aria-live="polite"></p>
+        <p
+          id="formMessage"
+          class="message"
+          aria-live="polite"
+        ></p>
 
         <div class="form-actions">
-          <button id="cancelEditButton" class="secondary-button hidden" type="button">
+          <button
+            id="cancelEditButton"
+            class="secondary-button hidden"
+            type="button"
+          >
             編集をキャンセル
           </button>
 
-          <button id="saveButton" class="primary-button" type="button">
+          <button
+            id="saveButton"
+            class="primary-button"
+            type="button"
+          >
             記録する
           </button>
         </div>
@@ -110,13 +183,19 @@
     </section>
 
     <!-- 時系列画面 -->
-    <section id="timelinePage" class="page">
+    <section
+      id="timelinePage"
+      class="page"
+    >
       <div class="section-heading">
         <h2>
           時系列で見る
         </h2>
 
-        <span id="recordCount" class="count-badge">
+        <span
+          id="recordCount"
+          class="count-badge"
+        >
           0件
         </span>
       </div>
@@ -127,7 +206,10 @@
             開始日
           </label>
 
-          <input id="timelineStartDate" type="date">
+          <input
+            id="timelineStartDate"
+            type="date"
+          >
         </div>
 
         <div class="filter-date-field">
@@ -135,24 +217,43 @@
             終了日
           </label>
 
-          <input id="timelineEndDate" type="date">
+          <input
+            id="timelineEndDate"
+            type="date"
+          >
         </div>
 
         <div class="filter-actions">
-          <button id="timelineFilterButton" class="primary-button" type="button">
+          <button
+            id="timelineFilterButton"
+            class="primary-button"
+            type="button"
+          >
             表示
           </button>
 
-          <button id="timelineResetButton" class="secondary-button" type="button">
+          <button
+            id="timelineResetButton"
+            class="secondary-button"
+            type="button"
+          >
             全て表示
           </button>
 
-          <button id="timelinePrintButton" class="print-button" type="button">
+          <button
+            id="timelinePrintButton"
+            class="print-button"
+            type="button"
+          >
             印刷する
           </button>
         </div>
 
-        <p id="timelineFilterMessage" class="filter-message" aria-live="polite"></p>
+        <p
+          id="timelineFilterMessage"
+          class="filter-message"
+          aria-live="polite"
+        ></p>
       </div>
 
       <!-- 活動内容検索 -->
@@ -162,31 +263,57 @@
         </label>
 
         <div class="search-row">
-          <input id="activitySearchInput" type="search" placeholder="例：散歩">
+          <input
+            id="activitySearchInput"
+            type="search"
+            placeholder="例：散歩"
+          >
 
-          <button id="activitySearchButton" class="primary-button" type="button">
+          <button
+            id="activitySearchButton"
+            class="primary-button"
+            type="button"
+          >
             検索
           </button>
 
-          <button id="activitySearchResetButton" class="secondary-button" type="button">
+          <button
+            id="activitySearchResetButton"
+            class="secondary-button"
+            type="button"
+          >
             解除
           </button>
         </div>
       </div>
 
       <!-- 通常画面の時系列表示 -->
-      <div id="timeline" class="timeline"></div>
+      <div
+        id="timeline"
+        class="timeline"
+      ></div>
 
       <!-- 印刷専用の時系列表示 -->
-      <div id="timelinePrintPages" class="timeline-print-pages" aria-hidden="true"></div>
+      <div
+        id="timelinePrintPages"
+        class="timeline-print-pages"
+        aria-hidden="true"
+      ></div>
 
-      <button id="clearAllButton" class="danger-button" type="button">
+      <button
+        id="clearAllButton"
+        class="danger-button"
+        type="button"
+      >
         すべての記録を削除
       </button>
     </section>
 
     <!-- グラフ画面 -->
-    <section id="graphPage" class="page">
+    <section
+      id="graphPage"
+      class="page"
+    >
       <div class="card graph-card">
         <h2>
           気分の推移
@@ -203,7 +330,10 @@
               開始日
             </label>
 
-            <input id="graphStartDate" type="date">
+            <input
+              id="graphStartDate"
+              type="date"
+            >
           </div>
 
           <div class="filter-date-field">
@@ -211,30 +341,55 @@
               終了日
             </label>
 
-            <input id="graphEndDate" type="date">
+            <input
+              id="graphEndDate"
+              type="date"
+            >
           </div>
 
           <div class="filter-actions">
-            <button id="graphFilterButton" class="primary-button" type="button">
+            <button
+              id="graphFilterButton"
+              class="primary-button"
+              type="button"
+            >
               表示
             </button>
 
-            <button id="graphResetButton" class="secondary-button" type="button">
+            <button
+              id="graphResetButton"
+              class="secondary-button"
+              type="button"
+            >
               全て表示
             </button>
 
-            <button id="graphPrintButton" class="print-button" type="button">
+            <button
+              id="graphPrintButton"
+              class="print-button"
+              type="button"
+            >
               印刷する
             </button>
           </div>
 
-          <p id="graphFilterMessage" class="filter-message" aria-live="polite"></p>
+          <p
+            id="graphFilterMessage"
+            class="filter-message"
+            aria-live="polite"
+          ></p>
         </div>
 
         <div class="canvas-wrap">
-          <canvas id="moodChart" aria-label="日時ごとの気分グラフ"></canvas>
+          <canvas
+            id="moodChart"
+            aria-label="日時ごとの気分グラフ"
+          ></canvas>
 
-          <p id="graphEmpty" class="empty-message">
+          <p
+            id="graphEmpty"
+            class="empty-message"
+          >
             記録するとグラフが表示されます。
           </p>
         </div>
@@ -242,15 +397,26 @@
     </section>
 
     <!-- 定期的な活動の画面 -->
-    <div id="routineModal" class="modal-backdrop hidden" role="dialog" aria-modal="true"
-      aria-labelledby="routineModalTitle" aria-hidden="true">
+    <div
+      id="routineModal"
+      class="modal-backdrop hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="routineModalTitle"
+      aria-hidden="true"
+    >
       <div class="routine-modal">
         <div class="routine-modal-header">
           <h2 id="routineModalTitle">
             定期的な活動
           </h2>
 
-          <button id="closeRoutineButton" class="modal-close-button" type="button" aria-label="閉じる">
+          <button
+            id="closeRoutineButton"
+            class="modal-close-button"
+            type="button"
+            aria-label="閉じる"
+          >
             ×
           </button>
         </div>
@@ -259,26 +425,48 @@
           活動を押すと「活動内容」に入力されます。
         </p>
 
-        <div id="routineList" class="routine-list"></div>
+        <div
+          id="routineList"
+          class="routine-list"
+        ></div>
 
-        <button id="toggleRoutineSettingsButton" class="secondary-button routine-settings-button" type="button">
+        <button
+          id="toggleRoutineSettingsButton"
+          class="secondary-button routine-settings-button"
+          type="button"
+        >
           設定
         </button>
 
-        <div id="routineSettings" class="routine-settings hidden">
+        <div
+          id="routineSettings"
+          class="routine-settings hidden"
+        >
           <h3>
             よくする活動を編集
           </h3>
 
           <div class="routine-add-row">
-            <input id="newRoutineInput" type="text" maxlength="100" placeholder="例：散歩を30分した">
+            <input
+              id="newRoutineInput"
+              type="text"
+              maxlength="100"
+              placeholder="例：散歩を30分した"
+            >
 
-            <button id="addRoutineButton" class="primary-button" type="button">
+            <button
+              id="addRoutineButton"
+              class="primary-button"
+              type="button"
+            >
               追加
             </button>
           </div>
 
-          <div id="routineEditList" class="routine-edit-list"></div>
+          <div
+            id="routineEditList"
+            class="routine-edit-list"
+          ></div>
         </div>
       </div>
     </div>
@@ -286,17 +474,29 @@
 
   <!-- 下部メニュー -->
   <nav class="bottom-nav">
-    <button type="button" class="nav-button active" data-page="inputPage">
+    <button
+      type="button"
+      class="nav-button active"
+      data-page="inputPage"
+    >
       <span>✏️</span>
       記録する
     </button>
 
-    <button type="button" class="nav-button" data-page="timelinePage">
+    <button
+      type="button"
+      class="nav-button"
+      data-page="timelinePage"
+    >
       <span>🕒</span>
       時系列
     </button>
 
-    <button type="button" class="nav-button" data-page="graphPage">
+    <button
+      type="button"
+      class="nav-button"
+      data-page="graphPage"
+    >
       <span>📈</span>
       グラフ
     </button>

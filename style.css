@@ -675,65 +675,43 @@ fieldset legend {
     font-size: 7.5pt;
   }
 
-.timeline-print-column {
-  display: grid;
-  grid-template-rows:
-    repeat(12, 18mm);
-  align-content: start;
-  gap: 0.7mm;
-  min-width: 0;
-  min-height: 0;
-}
+  /* A4を左右2列に分割 */
 
-  /* 左右それぞれ10件 */
+  .timeline-print-columns {
+    display: grid;
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+    gap: 3mm;
+    min-width: 0;
+    min-height: 0;
+    align-content: start;
+  }
+
+  /* 左右それぞれ12件。高さは18mmで固定 */
 
   .timeline-print-column {
     display: grid;
     grid-template-rows:
-      repeat(12, minmax(0, 1fr));
+      repeat(12, 18mm);
+    align-content: start;
     gap: 0.7mm;
     min-width: 0;
     min-height: 0;
   }
 
-.timeline-print-item {
-  width: 100%;
-  height: 18mm;
-  min-width: 0;
-  min-height: 0;
-  padding: 1mm 1.5mm;
-  overflow: hidden;
-  border: 0.25mm solid #aaa;
-  border-radius: 1.2mm;
-  break-inside: avoid;
-  page-break-inside: avoid;
-}
+  .timeline-print-item {
+    width: 100%;
+    height: 18mm;
+    min-width: 0;
+    min-height: 0;
+    padding: 1mm 1.5mm;
+    overflow: hidden;
+    border: 0.25mm solid #aaa;
+    border-radius: 1.2mm;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
 
-.timeline-print-record-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1mm;
-  font-size: 6.5pt;
-  font-weight: 700;
-  line-height: 1.1;
-}
-
-.timeline-print-record-head span {
-  flex: 0 0 auto;
-}
-
-.timeline-print-item p {
-  display: -webkit-box;
-  margin: 0.8mm 0 0;
-  overflow: hidden;
-  font-size: 7pt;
-  line-height: 1.15;
-  overflow-wrap: anywhere;
-  white-space: pre-wrap;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
   .timeline-print-record-head {
     display: flex;
     align-items: center;
