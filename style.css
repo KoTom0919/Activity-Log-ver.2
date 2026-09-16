@@ -1119,3 +1119,54 @@ input[type="date"]::-webkit-date-and-time-value {
     font-size: 0.76rem;
   }
 }
+/* ==================================
+   印刷時に活動内容をページ分割させない
+================================== */
+
+@media print {
+  .timeline-print-flow {
+    column-count: 2 !important;
+    column-gap: 3mm !important;
+    column-fill: auto !important;
+  }
+
+  .timeline-print-item {
+    display: inline-block !important;
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 0 1.5mm !important;
+    padding: 1.5mm 1.8mm !important;
+    overflow: visible !important;
+    vertical-align: top !important;
+
+    border: 0.25mm solid #aaa;
+    border-radius: 1.2mm;
+
+    /* 活動1件を途中で分割しない */
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    -webkit-column-break-inside: avoid !important;
+  }
+
+  .timeline-print-record-head,
+  .timeline-print-item time,
+  .timeline-print-item span,
+  .timeline-print-item p {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    -webkit-column-break-inside: avoid !important;
+  }
+
+  .timeline-print-item p {
+    display: block !important;
+    height: auto !important;
+    max-height: none !important;
+    margin: 1mm 0 0 !important;
+    overflow: visible !important;
+    white-space: pre-wrap !important;
+
+    /* 行数制限を解除 */
+    -webkit-line-clamp: unset !important;
+    -webkit-box-orient: initial !important;
+  }
+}
