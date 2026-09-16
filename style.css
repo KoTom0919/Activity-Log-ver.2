@@ -1286,19 +1286,27 @@ input[type="date"]::-webkit-date-and-time-value {
   ========================= */
 
   .timeline-print-page {
-    width: 100%;
-    height: 283mm;
+  width: 100%;
 
-    margin: 0;
-    padding: 0;
+  /* 283mmぴったりにしない */
+  height: auto;
+  min-height: 0;
 
-    overflow: hidden;
+  margin: 0;
+  padding: 0;
 
-    break-after: page;
-    page-break-after: always;
+  overflow: visible;
 
-    box-sizing: border-box;
-  }
+  box-sizing: border-box;
+
+  break-after: page;
+  page-break-after: always;
+}
+
+.timeline-print-page:last-child {
+  break-after: auto !important;
+  page-break-after: auto !important;
+}
 
 
   .timeline-print-page:last-child {
