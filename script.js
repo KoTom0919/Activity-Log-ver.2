@@ -116,6 +116,7 @@ document
     "click",
     setCurrentDateTime
   );
+
 /* 時刻は数字またはコロンのみ入力可能 */
 
 timeInput.addEventListener(
@@ -134,7 +135,7 @@ timeInput.addEventListener(
   }
 );
 
-/* 入力欄から離れたときに800を8:00へ変換 */
+/* 800を8:00へ変換 */
 
 timeInput.addEventListener(
   "blur",
@@ -165,7 +166,7 @@ cancelEditButton.addEventListener(
   () => resetForm()
 );
 
-/* 定期的な活動を開く */
+/* 定期的な活動 */
 
 document
   .getElementById(
@@ -212,8 +213,6 @@ newRoutineInput.addEventListener(
   }
 );
 
-/* モーダルの外側を押して閉じる */
-
 routineModal.addEventListener(
   "click",
   event => {
@@ -222,8 +221,6 @@ routineModal.addEventListener(
     }
   }
 );
-
-/* Escキーで閉じる */
 
 document.addEventListener(
   "keydown",
@@ -238,8 +235,6 @@ document.addEventListener(
     }
   }
 );
-
-/* 定期的な活動を選択 */
 
 routineList.addEventListener(
   "click",
@@ -266,14 +261,10 @@ routineList.addEventListener(
   }
 );
 
-/* 定期的な活動の編集 */
-
 routineEditList.addEventListener(
   "change",
   updateRoutineActivity
 );
-
-/* 定期的な活動の削除 */
 
 routineEditList.addEventListener(
   "click",
@@ -1037,12 +1028,12 @@ function filteredRecords(filter) {
       const afterStart =
         !filter.start ||
         record.date >=
-        filter.start;
+          filter.start;
 
       const beforeEnd =
         !filter.end ||
         record.date <=
-        filter.end;
+          filter.end;
 
       return (
         afterStart &&
@@ -1263,7 +1254,9 @@ function renderTimeline() {
           <div class="record-head">
             <time
               class="record-date"
-              datetime="${record.date}T${record.time}"
+              datetime="${record.date}T${getSortableTime(
+                record.time
+              )}"
             >
               ${formatDate(record.date)}
               ${record.time}
@@ -1271,16 +1264,19 @@ function renderTimeline() {
 
             <span
               class="mood-badge"
-              style="background:${moodColor(record.mood)}"
+              style="background:${moodColor(
+                record.mood
+              )}"
             >
               気分 ${formatMood(record.mood)}
             </span>
           </div>
 
-          <p class="activity-text">${escapeHtml(
-        record.activity
-      )
-        }</p>
+          <p class="activity-text">${
+            escapeHtml(
+              record.activity
+            )
+          }</p>
 
           <div class="record-actions">
             <button
@@ -1412,7 +1408,7 @@ function showPage(pageId) {
       button.classList.toggle(
         "active",
         button.dataset.page ===
-        pageId
+          pageId
       );
     });
 
@@ -1514,36 +1510,74 @@ function buildTimelinePrintPages() {
   `;
 }
 
-/* 印刷用の記録 */
+/* 印刷用の記録を日付単位でまとめる */
 
 function renderTimelinePrintItems(
   items
 ) {
-  return items
-    .map(record => {
+  const dateGroups = [];
+
+  items.forEach(record => {
+    const lastGroup =
+      dateGroups[
+        dateGroups.length - 1
+      ];
+
+    if (
+      !lastGroup ||
+      lastGroup.date !== record.date
+    ) {
+      dateGroups.push({
+        date: record.date,
+        records: [record]
+      });
+
+      return;
+    }
+
+    lastGroup.records.push(
+      record
+    );
+  });
+
+  return dateGroups
+    .map(group => {
       return `
-        <article class="timeline-print-item">
-          <div class="timeline-print-record-head">
-            <time
-              datetime="${record.date}T${getSortableTime(
-                record.time
-              )}"
-            >
-              ${formatDate(record.date)}
-              ${record.time}
-            </time>
+        <section class="timeline-print-date-group">
+          <h3 class="timeline-print-date-heading">
+            ${formatDate(group.date)}
+          </h3>
 
-            <span>
-              気分 ${formatMood(record.mood)}
-            </span>
+          <div class="timeline-print-date-records">
+            ${group.records
+              .map(record => {
+                return `
+                  <article class="timeline-print-item">
+                    <div class="timeline-print-record-head">
+                      <time
+                        datetime="${record.date}T${getSortableTime(
+                          record.time
+                        )}"
+                      >
+                        ${record.time}
+                      </time>
+
+                      <span>
+                        気分 ${formatMood(record.mood)}
+                      </span>
+                    </div>
+
+                    <p>${
+                      escapeHtml(
+                        record.activity
+                      )
+                    }</p>
+                  </article>
+                `;
+              })
+              .join("")}
           </div>
-
-          <p>${
-            escapeHtml(
-              record.activity
-            )
-          }</p>
-        </article>
+        </section>
       `;
     })
     .join("");
@@ -1872,16 +1906,16 @@ function drawGraph() {
       `${month}/${day}`,
       x,
       height -
-      padding.bottom +
-      13
+        padding.bottom +
+        13
     );
 
     context.fillText(
       items[index].time,
       x,
       height -
-      padding.bottom +
-      28
+        padding.bottom +
+        28
     );
   });
 }
@@ -1967,6 +2001,7 @@ function debounce(
     }, delay);
   };
 }
+
 /* =========================
    タイピングされた時刻の変換
 ========================= */
@@ -1975,7 +2010,10 @@ function normalizeTypedTime(value) {
   const input =
     String(value)
       .trim()
-      .replace(/\s/g, "");
+      .replace(
+        /\s/g,
+        ""
+      );
 
   if (!input) {
     return null;
