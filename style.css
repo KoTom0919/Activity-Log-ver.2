@@ -1268,3 +1268,291 @@ input[type="date"]::-webkit-date-and-time-value {
     -webkit-column-break-inside: avoid !important;
   }
 }
+/* ========================================
+   時系列印刷
+   iPhone / Safari対応 2列固定版
+======================================== */
+
+@media print {
+
+  @page {
+    size: A4 portrait;
+    margin: 7mm;
+  }
+
+
+  /* =========================
+     印刷ページ
+  ========================= */
+
+  .timeline-print-page {
+    width: 100%;
+    height: 283mm;
+
+    margin: 0;
+    padding: 0;
+
+    overflow: hidden;
+
+    break-after: page;
+    page-break-after: always;
+
+    box-sizing: border-box;
+  }
+
+
+  .timeline-print-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+
+  /* =========================
+     タイトル
+  ========================= */
+
+  .timeline-print-header {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    width: 100%;
+    height: 7mm;
+
+    margin: 0 0 2mm;
+
+    border-bottom:
+      0.3mm solid #777;
+
+    box-sizing: border-box;
+  }
+
+
+  .timeline-print-header h2 {
+    margin: 0;
+
+    font-size: 11pt;
+  }
+
+
+  .timeline-print-header span {
+    font-size: 7.5pt;
+  }
+
+
+  /* =========================
+     左右2列
+
+     CSS columnsは使わない。
+     左右のdivを直接並べる。
+  ========================= */
+
+  .timeline-print-columns {
+    display: flex !important;
+
+    flex-direction: row !important;
+
+    align-items: flex-start;
+
+    width: 100% !important;
+
+    gap: 3mm;
+
+    box-sizing: border-box;
+  }
+
+
+  .timeline-print-column {
+    display: block !important;
+
+    flex:
+      0 0 calc(
+        50% - 1.5mm
+      ) !important;
+
+    width:
+      calc(
+        50% - 1.5mm
+      ) !important;
+
+    max-width:
+      calc(
+        50% - 1.5mm
+      ) !important;
+
+    min-width: 0 !important;
+
+    box-sizing: border-box;
+  }
+
+
+  /* 左右の境界線 */
+
+  .timeline-print-right {
+    padding-left: 3mm;
+
+    border-left:
+      0.2mm solid #ddd;
+  }
+
+
+  /* =========================
+     日付
+  ========================= */
+
+  .timeline-print-date-group {
+    display: block;
+
+    width: 100%;
+
+    margin: 0 0 2mm;
+
+    break-inside: avoid;
+    page-break-inside: avoid;
+
+    box-sizing: border-box;
+  }
+
+
+  .timeline-print-date-heading {
+    width: 100%;
+
+    margin:
+      0 0 1mm;
+
+    padding:
+      1.2mm 1.8mm;
+
+    background: #edf4f1;
+
+    border-left:
+      1mm solid #58a98a;
+
+    font-size: 8pt;
+    line-height: 1.2;
+
+    box-sizing: border-box;
+
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+
+  .timeline-print-date-records {
+    width: 100%;
+
+    box-sizing: border-box;
+  }
+
+
+  /* =========================
+     活動1件
+  ========================= */
+
+  .timeline-print-item {
+    display: block !important;
+
+    width: 100% !important;
+
+    /*
+      重要：
+      以前の22mm固定を解除
+    */
+
+    height: auto !important;
+    min-height: 0 !important;
+
+    margin:
+      0 0 1mm;
+
+    padding:
+      1.3mm 1.7mm;
+
+    overflow: visible !important;
+
+    border:
+      0.25mm solid #aaa;
+
+    border-radius:
+      1.2mm;
+
+    box-sizing: border-box;
+
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+
+    -webkit-column-break-inside:
+      avoid;
+  }
+
+
+  /* =========================
+     時刻・気分
+  ========================= */
+
+  .timeline-print-record-head {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 1mm;
+
+    font-size: 6.5pt;
+    font-weight: 700;
+
+    line-height: 1.1;
+  }
+
+
+  .timeline-print-record-head span {
+    flex: 0 0 auto;
+  }
+
+
+  /* =========================
+     活動内容
+  ========================= */
+
+  .timeline-print-item p {
+    display: block !important;
+
+    margin:
+      0.7mm 0 0;
+
+    overflow: visible !important;
+
+    font-size: 7pt;
+
+    line-height: 1.15;
+
+    overflow-wrap: anywhere;
+
+    white-space: pre-wrap;
+
+    /*
+      以前の2行制限を解除
+    */
+
+    -webkit-line-clamp: unset !important;
+    -webkit-box-orient: initial !important;
+  }
+
+
+  /* =========================
+     空の場合
+  ========================= */
+
+  .timeline-print-empty {
+    margin:
+      20mm 0;
+
+    color: #555;
+
+    text-align: center;
+
+    font-size: 10pt;
+  }
+
+}

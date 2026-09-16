@@ -1463,7 +1463,9 @@ function clearPrintMode() {
   );
 }
 
-/* 印刷用ページの作成 */
+/* =========================
+   印刷用ページの作成
+========================= */
 
 function buildTimelinePrintPages() {
   const printArea =
@@ -1476,7 +1478,8 @@ function buildTimelinePrintPages() {
 
   if (items.length === 0) {
     printArea.innerHTML = `
-      <section class="timeline-print-document">
+      <section class="timeline-print-page">
+
         <div class="timeline-print-header">
           <h2>活動記録表</h2>
           <span>0件</span>
@@ -1485,100 +1488,286 @@ function buildTimelinePrintPages() {
         <p class="timeline-print-empty">
           条件に一致する記録がありません。
         </p>
+
       </section>
     `;
 
     return;
   }
 
-  printArea.innerHTML = `
-    <section class="timeline-print-document">
-      <div class="timeline-print-header">
-        <h2>活動記録表</h2>
 
-        <span>
-          ${items.length}件
-        </span>
-      </div>
+  /*
+    =========================
+    日付ごとにグループ化
+    =========================
+  */
 
-      <div class="timeline-print-flow">
-        ${renderTimelinePrintItems(
-          items
-        )}
-      </div>
-    </section>
-  `;
-}
-
-/* 印刷用の記録を日付単位でまとめる */
-
-function renderTimelinePrintItems(
-  items
-) {
   const dateGroups = [];
 
   items.forEach(record => {
-    const lastGroup =
-      dateGroups[
-        dateGroups.length - 1
-      ];
 
-    if (
-      !lastGroup ||
-      lastGroup.date !== record.date
-    ) {
-      dateGroups.push({
-        date: record.date,
-        records: [record]
+    let group =
+      dateGroups.find(item => {
+        return item.date === record.date;
       });
 
-      return;
+    if (!group) {
+      group = {
+        date: record.date,
+        records: []
+      };
+
+      dateGroups.push(group);
     }
 
-    lastGroup.records.push(
-      record
-    );
+    group.records.push(record);
   });
 
-  return dateGroups
+
+  /*
+    =========================
+    印刷ページを作成
+    =========================
+
+    1ページ
+
+    ┌────────┬────────┐
+    │ 左列   │ 右列   │
+    │        │        │
+    └────────┴────────┘
+
+    日付グループ単位で配置する
+  */
+
+  const pages = [];
+
+  let currentPage = {
+    left: [],
+    right: []
+  };
+
+  let currentColumn = "left";
+
+  /*
+    1列に入れる記録数の目安。
+
+    現在の印刷サイズなら
+    約12件程度が目安。
+
+    日付見出しも1件分として
+    計算する。
+  */
+
+  const MAX_UNITS_PER_COLUMN = 13;
+
+  let usedUnits = 0;
+
+
+  dateGroups.forEach(group => {
+
+    /*
+      日付見出し = 1
+      記録 = 件数
+    */
+
+    const groupUnits =
+      group.records.length + 1;
+
+
+    /*
+      今の列に入らない場合
+    */
+
+    if (
+      usedUnits > 0 &&
+      usedUnits + groupUnits >
+        MAX_UNITS_PER_COLUMN
+    ) {
+
+      /*
+        左列なら右列へ
+      */
+
+      if (currentColumn === "left") {
+
+        currentColumn = "right";
+
+        usedUnits = 0;
+
+      } else {
+
+        /*
+          右列もいっぱいなら
+          次ページへ
+        */
+
+        pages.push(currentPage);
+
+        currentPage = {
+          left: [],
+          right: []
+        };
+
+        currentColumn = "left";
+
+        usedUnits = 0;
+      }
+    }
+
+
+    /*
+      日付グループを現在の列へ追加
+    */
+
+    currentPage[
+      currentColumn
+    ].push(group);
+
+    usedUnits += groupUnits;
+  });
+
+
+  /*
+    最後のページを追加
+  */
+
+  if (
+    currentPage.left.length > 0 ||
+    currentPage.right.length > 0
+  ) {
+    pages.push(currentPage);
+  }
+
+
+  /*
+    =========================
+    HTML生成
+    =========================
+  */
+
+  printArea.innerHTML =
+    pages
+      .map((page, pageIndex) => {
+
+        return `
+          <section class="timeline-print-page">
+
+            <div class="timeline-print-header">
+
+              <h2>
+                活動記録表
+              </h2>
+
+              <span>
+                ${
+                  pageIndex === 0
+                    ? `${items.length}件`
+                    : ""
+                }
+              </span>
+
+            </div>
+
+
+            <div class="timeline-print-columns">
+
+              <div class="timeline-print-column timeline-print-left">
+
+                ${
+                  renderTimelinePrintGroups(
+                    page.left
+                  )
+                }
+
+              </div>
+
+
+              <div class="timeline-print-column timeline-print-right">
+
+                ${
+                  renderTimelinePrintGroups(
+                    page.right
+                  )
+                }
+
+              </div>
+
+            </div>
+
+          </section>
+        `;
+
+      })
+      .join("");
+}
+
+
+/* =========================
+   日付グループをHTML化
+========================= */
+
+function renderTimelinePrintGroups(
+  groups
+) {
+
+  return groups
     .map(group => {
+
       return `
         <section class="timeline-print-date-group">
+
           <h3 class="timeline-print-date-heading">
             ${formatDate(group.date)}
           </h3>
 
+
           <div class="timeline-print-date-records">
-            ${group.records
-              .map(record => {
-                return `
-                  <article class="timeline-print-item">
-                    <div class="timeline-print-record-head">
-                      <time
-                        datetime="${record.date}T${getSortableTime(
-                          record.time
-                        )}"
-                      >
-                        ${record.time}
-                      </time>
 
-                      <span>
-                        気分 ${formatMood(record.mood)}
-                      </span>
-                    </div>
+            ${
+              group.records
+                .map(record => {
 
-                    <p>${
-                      escapeHtml(
-                        record.activity
-                      )
-                    }</p>
-                  </article>
-                `;
-              })
-              .join("")}
+                  return `
+                    <article class="timeline-print-item">
+
+                      <div class="timeline-print-record-head">
+
+                        <time
+                          datetime="${record.date}T${getSortableTime(
+                            record.time
+                          )}"
+                        >
+                          ${record.time}
+                        </time>
+
+
+                        <span>
+                          気分 ${formatMood(
+                            record.mood
+                          )}
+                        </span>
+
+                      </div>
+
+
+                      <p>${
+                        escapeHtml(
+                          record.activity
+                        )
+                      }</p>
+
+                    </article>
+                  `;
+
+                })
+                .join("")
+            }
+
           </div>
+
         </section>
       `;
+
     })
     .join("");
 }
