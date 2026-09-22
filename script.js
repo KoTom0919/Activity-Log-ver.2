@@ -1043,9 +1043,8 @@ function filteredRecords(filter) {
   );
 }
 
-function validateDateRange(
-  start,
-  end,
+function validateDisplayDate(
+  date,
   messageId
 ) {
   const filterMessage =
@@ -1053,13 +1052,9 @@ function validateDateRange(
       messageId
     );
 
-  if (
-    start &&
-    end &&
-    start > end
-  ) {
+  if (!date) {
     filterMessage.textContent =
-      "開始日は終了日以前にしてください。";
+      "表示日を選択してください。";
 
     return false;
   }
@@ -1072,20 +1067,14 @@ function validateDateRange(
 /* 時系列の日付フィルター */
 
 function applyTimelineFilter() {
-  const start =
+  const displayDate =
     document.getElementById(
-      "timelineStartDate"
-    ).value;
-
-  const end =
-    document.getElementById(
-      "timelineEndDate"
+      "timelineDisplayDate"
     ).value;
 
   if (
-    !validateDateRange(
-      start,
-      end,
+    !validateDisplayDate(
+      displayDate,
       "timelineFilterMessage"
     )
   ) {
@@ -1093,8 +1082,8 @@ function applyTimelineFilter() {
   }
 
   timelineFilter = {
-    start: start,
-    end: end
+    start: displayDate,
+    end: displayDate
   };
 
   renderTimeline();
@@ -1102,11 +1091,7 @@ function applyTimelineFilter() {
 
 function resetTimelineFilter() {
   document.getElementById(
-    "timelineStartDate"
-  ).value = "";
-
-  document.getElementById(
-    "timelineEndDate"
+    "timelineDisplayDate"
   ).value = "";
 
   document.getElementById(
@@ -1124,20 +1109,14 @@ function resetTimelineFilter() {
 /* グラフの日付フィルター */
 
 function applyGraphFilter() {
-  const start =
+  const displayDate =
     document.getElementById(
-      "graphStartDate"
-    ).value;
-
-  const end =
-    document.getElementById(
-      "graphEndDate"
+      "graphDisplayDate"
     ).value;
 
   if (
-    !validateDateRange(
-      start,
-      end,
+    !validateDisplayDate(
+      displayDate,
       "graphFilterMessage"
     )
   ) {
@@ -1145,8 +1124,8 @@ function applyGraphFilter() {
   }
 
   graphFilter = {
-    start: start,
-    end: end
+    start: displayDate,
+    end: displayDate
   };
 
   drawGraph();
@@ -1154,11 +1133,7 @@ function applyGraphFilter() {
 
 function resetGraphFilter() {
   document.getElementById(
-    "graphStartDate"
-  ).value = "";
-
-  document.getElementById(
-    "graphEndDate"
+    "graphDisplayDate"
   ).value = "";
 
   document.getElementById(
@@ -1495,7 +1470,6 @@ function buildTimelinePrintPages() {
     return;
   }
 
-
   /*
     =========================
     日付ごとにグループ化
@@ -1505,7 +1479,6 @@ function buildTimelinePrintPages() {
   const dateGroups = [];
 
   items.forEach(record => {
-
     let group =
       dateGroups.find(item => {
         return item.date === record.date;
@@ -1522,7 +1495,6 @@ function buildTimelinePrintPages() {
 
     group.records.push(record);
   });
-
 
   /*
     =========================
@@ -1562,9 +1534,7 @@ function buildTimelinePrintPages() {
 
   let usedUnits = 0;
 
-
   dateGroups.forEach(group => {
-
     /*
       日付見出し = 1
       記録 = 件数
@@ -1572,7 +1542,6 @@ function buildTimelinePrintPages() {
 
     const groupUnits =
       group.records.length + 1;
-
 
     /*
       今の列に入らない場合
@@ -1583,19 +1552,15 @@ function buildTimelinePrintPages() {
       usedUnits + groupUnits >
         MAX_UNITS_PER_COLUMN
     ) {
-
       /*
         左列なら右列へ
       */
 
       if (currentColumn === "left") {
-
         currentColumn = "right";
 
         usedUnits = 0;
-
       } else {
-
         /*
           右列もいっぱいなら
           次ページへ
@@ -1614,7 +1579,6 @@ function buildTimelinePrintPages() {
       }
     }
 
-
     /*
       日付グループを現在の列へ追加
     */
@@ -1625,7 +1589,6 @@ function buildTimelinePrintPages() {
 
     usedUnits += groupUnits;
   });
-
 
   /*
     最後のページを追加
@@ -1638,7 +1601,6 @@ function buildTimelinePrintPages() {
     pages.push(currentPage);
   }
 
-
   /*
     =========================
     HTML生成
@@ -1648,7 +1610,6 @@ function buildTimelinePrintPages() {
   printArea.innerHTML =
     pages
       .map((page, pageIndex) => {
-
         return `
           <section class="timeline-print-page">
 
@@ -1668,7 +1629,6 @@ function buildTimelinePrintPages() {
 
             </div>
 
-
             <div class="timeline-print-columns">
 
               <div class="timeline-print-column timeline-print-left">
@@ -1680,7 +1640,6 @@ function buildTimelinePrintPages() {
                 }
 
               </div>
-
 
               <div class="timeline-print-column timeline-print-right">
 
@@ -1696,11 +1655,9 @@ function buildTimelinePrintPages() {
 
           </section>
         `;
-
       })
       .join("");
 }
-
 
 /* =========================
    日付グループをHTML化
@@ -1709,10 +1666,8 @@ function buildTimelinePrintPages() {
 function renderTimelinePrintGroups(
   groups
 ) {
-
   return groups
     .map(group => {
-
       return `
         <section class="timeline-print-date-group">
 
@@ -1720,13 +1675,11 @@ function renderTimelinePrintGroups(
             ${formatDate(group.date)}
           </h3>
 
-
           <div class="timeline-print-date-records">
 
             ${
               group.records
                 .map(record => {
-
                   return `
                     <article class="timeline-print-item">
 
@@ -1740,7 +1693,6 @@ function renderTimelinePrintGroups(
                           ${record.time}
                         </time>
 
-
                         <span>
                           気分 ${formatMood(
                             record.mood
@@ -1748,7 +1700,6 @@ function renderTimelinePrintGroups(
                         </span>
 
                       </div>
-
 
                       <p>${
                         escapeHtml(
@@ -1758,7 +1709,6 @@ function renderTimelinePrintGroups(
 
                     </article>
                   `;
-
                 })
                 .join("")
             }
@@ -1767,7 +1717,6 @@ function renderTimelinePrintGroups(
 
         </section>
       `;
-
     })
     .join("");
 }
@@ -1804,7 +1753,7 @@ function drawGraph() {
 
   emptyMessage.textContent =
     records.length > 0
-      ? "指定した期間の記録がありません。"
+      ? "指定した日の記録がありません。"
       : "記録するとグラフが表示されます。";
 
   if (items.length === 0) {
