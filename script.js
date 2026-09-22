@@ -1,201 +1,860 @@
 "use strict";
 
-/* =========================
-   基本設定
-========================= */
+const STORAGE_KEY = "activityRecords_v1";
+const ROUTINE_STORAGE_KEY = "routineActivities_v1";
+const DAILY_MEMO_STORAGE_KEY = "dailyMemos_v1";
 
-const STORAGE_KEY =
-  "activityRecords_v1";
-
-const ROUTINE_STORAGE_KEY =
-  "routineActivities_v1";
-
-const DAILY_MEMO_STORAGE_KEY =
-  "dailyMemos_v1";
-
-let records =
-  loadRecords();
-
-let routineActivities =
-  loadRoutineActivities();
-
-let dailyMemos =
-  loadDailyMemos();
+let records = loadJson(STORAGE_KEY, []);
+let routineActivities = loadJson(ROUTINE_STORAGE_KEY, []);
+let dailyMemos = loadJson(DAILY_MEMO_STORAGE_KEY, {});
 
 let selectedMood = null;
 let editingId = null;
-
-let timelineFilter = {
-  start: "",
-  end: ""
-};
-
+let moodChart = null;
 let routineSettingsOpen = false;
 
-let graphFilter = {
-  start: "",
-  end: ""
-};
+const dateInput = document.getElementById("recordDate");
+const timeInput = document.getElementById("recordTime");
+const activityInput = document.getElementById("activity");
+const formMessage = document.getElementById("formMessage");
+const saveButton = document.getElementById("saveButton");
+const cancelEditButton = document.getElementById("cancelEditButton");
 
-/* =========================
-   HTML要素
-========================= */
+const timelineDateInput =
+  document.getElementById("timelineDisplayDate");
 
-const dateInput =
-  document.getElementById(
-    "recordDate"
-  );
-
-const timeInput =
-  document.getElementById(
-    "recordTime"
-  );
-
-const activityInput =
-  document.getElementById(
-    "activity"
-  );
-
-const moodButtons = [
-  ...document.querySelectorAll(
-    "#moodButtons button"
-  )
-];
-
-const message =
-  document.getElementById(
-    "formMessage"
-  );
-
-const saveButton =
-  document.getElementById(
-    "saveButton"
-  );
-
-const cancelEditButton =
-  document.getElementById(
-    "cancelEditButton"
-  );
-
-const routineModal =
-  document.getElementById(
-    "routineModal"
-  );
-
-const routineList =
-  document.getElementById(
-    "routineList"
-  );
-
-const routineSettings =
-  document.getElementById(
-    "routineSettings"
-  );
-
-const routineEditList =
-  document.getElementById(
-    "routineEditList"
-  );
-
-const newRoutineInput =
-  document.getElementById(
-    "newRoutineInput"
-  );
+const graphDateInput =
+  document.getElementById("graphDisplayDate");
 
 const dailyMemoInput =
-  document.getElementById(
-    "dailyMemo"
-  );
+  document.getElementById("dailyMemo");
+
+const dailyMemoMessage =
+  document.getElementById("dailyMemoMessage");
 
 const saveDailyMemoButton =
-  document.getElementById(
-    "saveDailyMemoButton"
-  );
+  document.getElementById("saveDailyMemoButton");
+
+const searchMoodInput =
+  document.getElementById("searchMood");
+
+const moodButtons = [
+  ...document.querySelectorAll("#moodButtons button")
+];
+
+const routineModal =
+  document.getElementById("routineModal");
+
+const routineList =
+  document.getElementById("routineList");
+
+const routineSettings =
+  document.getElementById("routineSettings");
+
+const routineEditList =
+  document.getElementById("routineEditList");
+
+const newRoutineInput =
+  document.getElementById("newRoutineInput");
 
 /* =========================
-   初期表示
-========================= */
-
-setCurrentDateTime();
-renderTimeline();
-
-/* =========================
-   ボタン
+   記録入力
 ========================= */
 
 document
-  .getElementById(
-    "nowButton"
-  )
-  .addEventListener(
-    "click",
-    setCurrentDateTime
-  );
+  .getElementById("nowButton")
+  .addEventListener("click", setCurrentDateTime);
 
-/* 時刻は数字またはコロンのみ入力可能 */
-
-timeInput.addEventListener(
-  "input",
-  () => {
-    timeInput.value =
-      timeInput.value
-        .replace(
-          /[^0-9:]/g,
-          ""
-        )
-        .slice(
-          0,
-          5
-        );
-  }
-);
-
-/* 800を8:00へ変換 */
-
-timeInput.addEventListener(
-  "blur",
-  () => {
-    if (!timeInput.value.trim()) {
-      return;
-    }
-
-    const normalizedTime =
-      normalizeTypedTime(
-        timeInput.value
-      );
-
-    if (normalizedTime) {
-      timeInput.value =
-        normalizedTime;
-    }
-  }
-);
-
-saveButton.addEventListener(
-  "click",
-  saveRecord
-);
+saveButton.addEventListener("click", saveRecord);
 
 cancelEditButton.addEventListener(
   "click",
-  () => resetForm()
+  resetForm
 );
 
-/* 定期的な活動 */
+timeInput.addEventListener("input", () => {
+  timeInput.value = timeInput.value
+    .replace(/[^0-9:]/g, "")
+    .slice(0, 5);
+});
+
+timeInput.addEventListener("blur", () => {
+  if (!timeInput.value.trim()) {
+    return;
+  }
+
+  const normalized =
+    normalizeTypedTime(timeInput.value);
+
+  if (normalized) {
+    timeInput.value = normalized;
+  }
+});
+
+moodButtons.forEach(button => {
+  button.addEventListener("click", () => {
+    selectMood(Number(button.dataset.mood));
+  });
+});
+
+function selectMood(mood) {
+  selectedMood = mood;
+
+  moodButtons.forEach(button => {
+    const selected =
+      mood !== null &&
+      Number(button.dataset.mood) === mood;
+
+    button.classList.toggle(
+      "selected",
+      selected
+    );
+
+    button.setAttribute(
+      "aria-pressed",
+      String(selected)
+    );
+  });
+}
+
+function saveRecord() {
+  const date = dateInput.value;
+  const time =
+    normalizeTypedTime(timeInput.value);
+  const activity =
+    activityInput.value.trim();
+
+  if (!date) {
+    showFormMessage(
+      "日付を入力してください。"
+    );
+    return;
+  }
+
+  if (!time) {
+    showFormMessage(
+      "時刻を入力してください。"
+    );
+    return;
+  }
+
+  if (!activity) {
+    showFormMessage(
+      "活動内容を入力してください。"
+    );
+    return;
+  }
+
+  if (selectedMood === null) {
+    showFormMessage(
+      "気分を選択してください。"
+    );
+    return;
+  }
+
+  const wasEditing =
+    editingId !== null;
+
+  const record = {
+    id: editingId || createRecordId(),
+    date,
+    time,
+    activity,
+    mood: selectedMood
+  };
+
+  if (wasEditing) {
+    records = records.map(item => {
+      return item.id === editingId
+        ? record
+        : item;
+    });
+  } else {
+    records.push(record);
+  }
+
+  saveJson(STORAGE_KEY, records);
+
+  renderTimeline();
+  drawGraph();
+  resetForm();
+
+  showFormMessage(
+    wasEditing
+      ? "記録を更新しました。"
+      : "記録しました。",
+    true
+  );
+}
+
+function editRecord(id) {
+  const record =
+    records.find(item => item.id === id);
+
+  if (!record) {
+    return;
+  }
+
+  editingId = id;
+  dateInput.value = record.date;
+  timeInput.value = record.time;
+  activityInput.value = record.activity;
+
+  selectMood(Number(record.mood));
+
+  saveButton.textContent = "更新する";
+
+  cancelEditButton.classList.remove(
+    "hidden"
+  );
+
+  showFormMessage("");
+  showPage("inputPage");
+  activityInput.focus();
+}
+
+function deleteRecord(id) {
+  const confirmed = window.confirm(
+    "この記録を削除しますか？"
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  records = records.filter(
+    item => item.id !== id
+  );
+
+  saveJson(STORAGE_KEY, records);
+
+  renderTimeline();
+  drawGraph();
+}
 
 document
-  .getElementById(
-    "openRoutineButton"
-  )
+  .getElementById("clearAllButton")
+  .addEventListener(
+    "click",
+    clearAllRecords
+  );
+
+function clearAllRecords() {
+  if (records.length === 0) {
+    return;
+  }
+
+  const confirmed = window.confirm(
+    "すべての活動記録を削除しますか？"
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  records = [];
+
+  saveJson(STORAGE_KEY, records);
+
+  renderTimeline();
+  drawGraph();
+}
+
+function resetForm() {
+  editingId = null;
+  activityInput.value = "";
+
+  selectMood(null);
+  setCurrentDateTime();
+
+  saveButton.textContent = "記録する";
+
+  cancelEditButton.classList.add(
+    "hidden"
+  );
+}
+
+function showFormMessage(
+  text,
+  success = false
+) {
+  formMessage.textContent = text;
+
+  formMessage.classList.toggle(
+    "success",
+    success
+  );
+}
+
+/* =========================
+   時系列
+========================= */
+
+timelineDateInput.addEventListener(
+  "change",
+  () => {
+    document.getElementById(
+      "timelineFilterMessage"
+    ).textContent = "";
+
+    renderTimeline();
+
+    loadDailyMemo(
+      timelineDateInput.value
+    );
+  }
+);
+
+document
+  .getElementById("timelineResetButton")
+  .addEventListener("click", () => {
+    timelineDateInput.value = "";
+
+    document.getElementById(
+      "timelineFilterMessage"
+    ).textContent = "";
+
+    renderTimeline();
+    loadDailyMemo("");
+  });
+
+function getTimelineRecords() {
+  const selectedDate =
+    timelineDateInput.value;
+
+  return getSortedRecords().filter(
+    record => {
+      return (
+        !selectedDate ||
+        record.date === selectedDate
+      );
+    }
+  );
+}
+
+function renderTimeline() {
+  const timeline =
+    document.getElementById("timeline");
+
+  const items = getTimelineRecords();
+
+  document.getElementById(
+    "recordCount"
+  ).textContent = `${items.length}件`;
+
+  document
+    .getElementById("clearAllButton")
+    .classList.toggle(
+      "hidden",
+      records.length === 0
+    );
+
+  if (items.length === 0) {
+    timeline.innerHTML = `
+      <p class="empty-message">
+        この日の記録はありません。
+      </p>
+    `;
+    return;
+  }
+
+  timeline.innerHTML = items
+    .map(record => {
+      return `
+        <article class="timeline-item">
+          <div class="record-head">
+            <time
+              class="record-date"
+              datetime="${record.date}T${getSortableTime(
+                record.time
+              )}"
+            >
+              ${formatDate(record.date)}
+              ${escapeHtml(record.time)}
+            </time>
+
+            <span
+              class="mood-badge"
+              style="background:${moodColor(
+                Number(record.mood)
+              )}"
+            >
+              気分
+              ${formatMood(
+                Number(record.mood)
+              )}
+            </span>
+          </div>
+
+          <p class="activity-text">
+            ${escapeHtml(record.activity)}
+          </p>
+
+          <div class="record-actions">
+            <button
+              type="button"
+              onclick="editRecord('${record.id}')"
+            >
+              編集
+            </button>
+
+            <button
+              type="button"
+              class="delete-button"
+              onclick="deleteRecord('${record.id}')"
+            >
+              削除
+            </button>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
+/* =========================
+   日別メモ
+========================= */
+
+dailyMemoInput.addEventListener(
+  "input",
+  () => {
+    autoResizeTextarea(dailyMemoInput);
+    dailyMemoMessage.textContent = "";
+  }
+);
+
+saveDailyMemoButton.addEventListener(
+  "click",
+  saveDailyMemo
+);
+
+function loadDailyMemo(date) {
+  const enabled = Boolean(date);
+
+  dailyMemoInput.disabled = !enabled;
+  saveDailyMemoButton.disabled = !enabled;
+
+  dailyMemoInput.value = enabled
+    ? dailyMemos[date] || ""
+    : "";
+
+  dailyMemoInput.placeholder = enabled
+    ? "体調、予定、その日の振り返りなど"
+    : "表示日を選択すると、その日のメモを入力できます";
+
+  dailyMemoMessage.textContent = "";
+
+  autoResizeTextarea(dailyMemoInput);
+}
+
+function saveDailyMemo() {
+  const date =
+    timelineDateInput.value;
+
+  if (!date) {
+    dailyMemoMessage.textContent =
+      "表示日を選択してください。";
+    return;
+  }
+
+  const memo =
+    dailyMemoInput.value.trim();
+
+  if (memo) {
+    dailyMemos[date] = memo;
+  } else {
+    delete dailyMemos[date];
+  }
+
+  const saved = saveJson(
+    DAILY_MEMO_STORAGE_KEY,
+    dailyMemos
+  );
+
+  dailyMemoMessage.textContent =
+    saved
+      ? "保存しました。"
+      : "保存できませんでした。";
+}
+
+function autoResizeTextarea(textarea) {
+  textarea.style.height = "auto";
+
+  textarea.style.height =
+    `${Math.max(
+      textarea.scrollHeight,
+      88
+    )}px`;
+}
+
+/* =========================
+   グラフ
+========================= */
+
+graphDateInput.addEventListener(
+  "change",
+  () => {
+    document.getElementById(
+      "graphFilterMessage"
+    ).textContent = "";
+
+    drawGraph();
+  }
+);
+
+document
+  .getElementById("graphResetButton")
+  .addEventListener("click", () => {
+    graphDateInput.value = "";
+
+    document.getElementById(
+      "graphFilterMessage"
+    ).textContent = "";
+
+    drawGraph();
+  });
+
+function getGraphRecords() {
+  const selectedDate =
+    graphDateInput.value;
+
+  return getSortedRecords().filter(
+    record => {
+      return (
+        !selectedDate ||
+        record.date === selectedDate
+      );
+    }
+  );
+}
+
+function drawGraph() {
+  const canvas =
+    document.getElementById("moodChart");
+
+  const emptyMessage =
+    document.getElementById("graphEmpty");
+
+  const items = getGraphRecords();
+
+  if (moodChart) {
+    moodChart.destroy();
+    moodChart = null;
+  }
+
+  canvas.classList.toggle(
+    "hidden",
+    items.length === 0
+  );
+
+  emptyMessage.classList.toggle(
+    "hidden",
+    items.length > 0
+  );
+
+  if (items.length === 0) {
+    emptyMessage.textContent =
+      "この日の記録はありません。";
+    return;
+  }
+
+  if (typeof Chart === "undefined") {
+    canvas.classList.add("hidden");
+    emptyMessage.classList.remove(
+      "hidden"
+    );
+
+    emptyMessage.textContent =
+      "グラフを読み込めませんでした。";
+    return;
+  }
+
+  moodChart = new Chart(canvas, {
+    type: "line",
+
+    data: {
+      labels: items.map(
+        record => record.time
+      ),
+
+      datasets: [
+        {
+          label: "気分",
+
+          data: items.map(
+            record =>
+              Number(record.mood)
+          ),
+
+          borderColor: "#58a98a",
+
+          backgroundColor:
+            "rgba(88,169,138,0.18)",
+
+          pointBackgroundColor:
+            items.map(record => {
+              return moodColor(
+                Number(record.mood)
+              );
+            }),
+
+          pointBorderColor: "#ffffff",
+          pointBorderWidth: 2,
+          pointRadius: 5,
+          borderWidth: 3,
+          tension: 0.2,
+          fill: false
+        }
+      ]
+    },
+
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+
+      scales: {
+        y: {
+          min: -3,
+          max: 3,
+
+          ticks: {
+            stepSize: 1,
+
+            callback(value) {
+              return formatMood(
+                Number(value)
+              );
+            }
+          }
+        },
+
+        x: {
+          title: {
+            display: true,
+
+            text: graphDateInput.value
+              ? formatDate(
+                  graphDateInput.value
+                )
+              : "時刻"
+          }
+        }
+      },
+
+      plugins: {
+        legend: {
+          display: true
+        }
+      }
+    }
+  });
+}
+
+/* =========================
+   検索
+========================= */
+
+document
+  .getElementById("searchButton")
+  .addEventListener(
+    "click",
+    runSearch
+  );
+
+document
+  .getElementById("searchClearButton")
+  .addEventListener(
+    "click",
+    clearSearch
+  );
+
+document
+  .getElementById("searchKeyword")
+  .addEventListener(
+    "keydown",
+    event => {
+      if (event.key === "Enter") {
+        runSearch();
+      }
+    }
+  );
+
+function runSearch() {
+  const startDate =
+    document.getElementById(
+      "searchStartDate"
+    ).value;
+
+  const endDate =
+    document.getElementById(
+      "searchEndDate"
+    ).value;
+
+  const keyword =
+    document.getElementById(
+      "searchKeyword"
+    ).value
+      .trim()
+      .toLocaleLowerCase("ja-JP");
+
+  const moodValue =
+    searchMoodInput.value;
+
+  const searchMessage =
+    document.getElementById(
+      "searchMessage"
+    );
+
+  if (!startDate || !endDate) {
+    searchMessage.textContent =
+      "開始日と終了日を選択してください。";
+    return;
+  }
+
+  if (startDate > endDate) {
+    searchMessage.textContent =
+      "開始日は終了日以前にしてください。";
+    return;
+  }
+
+  if (!keyword && moodValue === "") {
+    searchMessage.textContent =
+      "検索ワードまたは気分を指定してください。";
+    return;
+  }
+
+  searchMessage.textContent = "";
+
+  const results =
+    getSortedRecords().filter(
+      record => {
+        const dateMatches =
+          record.date >= startDate &&
+          record.date <= endDate;
+
+        const keywordMatches =
+          !keyword ||
+          record.activity
+            .toLocaleLowerCase("ja-JP")
+            .includes(keyword);
+
+        const moodMatches =
+          moodValue === "" ||
+          Number(record.mood) ===
+            Number(moodValue);
+
+        return (
+          dateMatches &&
+          keywordMatches &&
+          moodMatches
+        );
+      }
+    );
+
+  renderSearchResults(results);
+}
+
+function renderSearchResults(items) {
+  const resultsArea =
+    document.getElementById(
+      "searchResults"
+    );
+
+  document.getElementById(
+    "searchResultCount"
+  ).textContent = `${items.length}件`;
+
+  if (items.length === 0) {
+    resultsArea.innerHTML = `
+      <p class="empty-message">
+        条件に一致する記録がありません。
+      </p>
+    `;
+    return;
+  }
+
+  resultsArea.innerHTML = items
+    .map(record => {
+      return `
+        <article class="search-result-item">
+          <div class="record-head">
+            <time class="record-date">
+              ${formatDate(record.date)}
+              ${escapeHtml(record.time)}
+            </time>
+
+            <span
+              class="mood-badge"
+              style="background:${moodColor(
+                Number(record.mood)
+              )}"
+            >
+              気分
+              ${formatMood(
+                Number(record.mood)
+              )}
+            </span>
+          </div>
+
+          <p class="activity-text">
+            ${escapeHtml(record.activity)}
+          </p>
+        </article>
+      `;
+    })
+    .join("");
+}
+
+function clearSearch() {
+  document.getElementById(
+    "searchStartDate"
+  ).value = "";
+
+  document.getElementById(
+    "searchEndDate"
+  ).value = "";
+
+  document.getElementById(
+    "searchKeyword"
+  ).value = "";
+
+  searchMoodInput.value = "";
+
+  document.getElementById(
+    "searchMessage"
+  ).textContent = "";
+
+  clearSearchResults();
+}
+
+function clearSearchResults() {
+  document.getElementById(
+    "searchResultCount"
+  ).textContent = "0件";
+
+  document.getElementById(
+    "searchResults"
+  ).innerHTML = `
+    <p class="empty-message">
+      期間と検索条件を入力してください。
+    </p>
+  `;
+}
+
+/* =========================
+   定期的な活動
+========================= */
+
+document
+  .getElementById("openRoutineButton")
   .addEventListener(
     "click",
     openRoutineModal
   );
 
 document
-  .getElementById(
-    "closeRoutineButton"
-  )
+  .getElementById("closeRoutineButton")
   .addEventListener(
     "click",
     closeRoutineModal
@@ -205,15 +864,15 @@ document
   .getElementById(
     "toggleRoutineSettingsButton"
   )
-  .addEventListener(
-    "click",
-    toggleRoutineSettings
-  );
+  .addEventListener("click", () => {
+    routineSettingsOpen =
+      !routineSettingsOpen;
+
+    renderRoutineActivities();
+  });
 
 document
-  .getElementById(
-    "addRoutineButton"
-  )
+  .getElementById("addRoutineButton")
   .addEventListener(
     "click",
     addRoutineActivity
@@ -237,20 +896,6 @@ routineModal.addEventListener(
   }
 );
 
-document.addEventListener(
-  "keydown",
-  event => {
-    if (
-      event.key === "Escape" &&
-      !routineModal.classList.contains(
-        "hidden"
-      )
-    ) {
-      closeRoutineModal();
-    }
-  }
-);
-
 routineList.addEventListener(
   "click",
   event => {
@@ -263,10 +908,9 @@ routineList.addEventListener(
       return;
     }
 
-    const index =
-      Number(
-        button.dataset.routineIndex
-      );
+    const index = Number(
+      button.dataset.routineIndex
+    );
 
     activityInput.value =
       routineActivities[index] || "";
@@ -278,305 +922,68 @@ routineList.addEventListener(
 
 routineEditList.addEventListener(
   "change",
-  updateRoutineActivity
+  event => {
+    const input =
+      event.target.closest(
+        "[data-routine-edit-index]"
+      );
+
+    if (!input) {
+      return;
+    }
+
+    const index = Number(
+      input.dataset.routineEditIndex
+    );
+
+    const value =
+      input.value.trim();
+
+    if (!value) {
+      renderRoutineActivities();
+      return;
+    }
+
+    routineActivities[index] = value;
+
+    saveJson(
+      ROUTINE_STORAGE_KEY,
+      routineActivities
+    );
+
+    renderRoutineActivities();
+  }
 );
 
 routineEditList.addEventListener(
   "click",
-  deleteRoutineActivity
-);
-
-/* すべての記録を削除 */
-
-document
-  .getElementById(
-    "clearAllButton"
-  )
-  .addEventListener(
-    "click",
-    clearAllRecords
-  );
-
-/* 時系列の日付絞り込み */
-
-document
-  .getElementById(
-    "timelineFilterButton"
-  )
-  .addEventListener(
-    "click",
-    applyTimelineFilter
-  );
-
-document
-  .getElementById(
-    "timelineResetButton"
-  )
-  .addEventListener(
-    "click",
-    resetTimelineFilter
-  );
-
-/* グラフの日付絞り込み */
-
-document
-  .getElementById(
-    "graphFilterButton"
-  )
-  .addEventListener(
-    "click",
-    applyGraphFilter
-  );
-
-document
-  .getElementById(
-    "graphResetButton"
-  )
-  .addEventListener(
-    "click",
-    resetGraphFilter
-  );
-
-/* 印刷 */
-
-document
-  .getElementById(
-    "timelinePrintButton"
-  )
-  .addEventListener(
-    "click",
-    () => {
-      printSelectedPage(
-        "timeline"
-      );
-    }
-  );
-
-document
-  .getElementById(
-    "graphPrintButton"
-  )
-  .addEventListener(
-    "click",
-    () => {
-      printSelectedPage(
-        "graph"
-      );
-    }
-  );
-
-window.addEventListener(
-  "afterprint",
-  clearPrintMode
-);
-
-/* 日別メモ */
-
-saveDailyMemoButton.addEventListener(
-  "click",
-  saveDailyMemo
-);
-
-dailyMemoInput.addEventListener(
-  "input",
-  () => {
-    autoResizeTextarea(
-      dailyMemoInput
-    );
-
-    document.getElementById(
-      "dailyMemoMessage"
-    ).textContent = "";
-  }
-);
-
-/* 検索 */
-
-document.getElementById(
-  "searchButton"
-).addEventListener(
-  "click",
-  runSearch
-);
-
-document.getElementById(
-  "searchClearButton"
-).addEventListener(
-  "click",
-  clearSearch
-);
-
-document.getElementById(
-  "searchKeyword"
-).addEventListener(
-  "keydown",
   event => {
-    if (event.key === "Enter") {
-      runSearch();
-    }
-  }
-);
-
-/* 気分ボタン */
-
-moodButtons.forEach(button => {
-  button.addEventListener(
-    "click",
-    () => {
-      selectMood(
-        Number(
-          button.dataset.mood
-        )
-      );
-    }
-  );
-});
-
-/* 画面切り替え */
-
-document
-  .querySelectorAll(
-    ".nav-button"
-  )
-  .forEach(button => {
-    button.addEventListener(
-      "click",
-      () => {
-        showPage(
-          button.dataset.page
-        );
-      }
-    );
-  });
-
-/* 画面幅変更時 */
-
-window.addEventListener(
-  "resize",
-  debounce(() => {
-    const graphPage =
-      document.getElementById(
-        "graphPage"
+    const button =
+      event.target.closest(
+        "[data-routine-delete-index]"
       );
 
-    if (
-      graphPage.classList.contains(
-        "active"
-      )
-    ) {
-      drawGraph();
-    }
-  }, 150)
-);
-
-/* =========================
-   記録データの読み込み
-========================= */
-
-function loadRecords() {
-  try {
-    const savedData =
-      localStorage.getItem(
-        STORAGE_KEY
-      );
-
-    if (!savedData) {
-      return [];
+    if (!button) {
+      return;
     }
 
-    const parsedData =
-      JSON.parse(savedData);
-
-    return Array.isArray(
-      parsedData
-    )
-      ? parsedData
-      : [];
-  } catch (error) {
-    console.error(
-      "記録の読み込みに失敗しました。",
-      error
+    const index = Number(
+      button.dataset.routineDeleteIndex
     );
 
-    return [];
-  }
-}
-
-/* =========================
-   記録データの保存
-========================= */
-
-function persistRecords() {
-  try {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(records)
-    );
-  } catch (error) {
-    console.error(
-      "記録の保存に失敗しました。",
-      error
+    routineActivities.splice(
+      index,
+      1
     );
 
-    showMessage(
-      "記録を保存できませんでした。"
-    );
-  }
-}
-
-/* =========================
-   定期的な活動
-========================= */
-
-function loadRoutineActivities() {
-  try {
-    const savedData =
-      localStorage.getItem(
-        ROUTINE_STORAGE_KEY
-      );
-
-    if (!savedData) {
-      return [];
-    }
-
-    const parsedData =
-      JSON.parse(savedData);
-
-    if (!Array.isArray(parsedData)) {
-      return [];
-    }
-
-    return parsedData.filter(item => {
-      return (
-        typeof item === "string" &&
-        item.trim()
-      );
-    });
-  } catch (error) {
-    console.error(
-      "定期的な活動の読み込みに失敗しました。",
-      error
-    );
-
-    return [];
-  }
-}
-
-function persistRoutineActivities() {
-  try {
-    localStorage.setItem(
+    saveJson(
       ROUTINE_STORAGE_KEY,
-      JSON.stringify(
-        routineActivities
-      )
+      routineActivities
     );
-  } catch (error) {
-    console.error(
-      "定期的な活動の保存に失敗しました。",
-      error
-    );
+
+    renderRoutineActivities();
   }
-}
+);
 
 function openRoutineModal() {
   routineSettingsOpen = false;
@@ -595,12 +1002,6 @@ function openRoutineModal() {
   document.body.classList.add(
     "modal-open"
   );
-
-  document
-    .getElementById(
-      "closeRoutineButton"
-    )
-    .focus();
 }
 
 function closeRoutineModal() {
@@ -618,26 +1019,43 @@ function closeRoutineModal() {
   );
 }
 
-function toggleRoutineSettings() {
-  routineSettingsOpen =
-    !routineSettingsOpen;
+function addRoutineActivity() {
+  const value =
+    newRoutineInput.value.trim();
+
+  if (!value) {
+    newRoutineInput.focus();
+    return;
+  }
+
+  routineActivities.push(value);
+
+  newRoutineInput.value = "";
+
+  saveJson(
+    ROUTINE_STORAGE_KEY,
+    routineActivities
+  );
 
   renderRoutineActivities();
-
-  if (routineSettingsOpen) {
-    newRoutineInput.focus();
-  }
+  newRoutineInput.focus();
 }
 
 function renderRoutineActivities() {
-  if (routineActivities.length > 0) {
+  if (routineActivities.length === 0) {
+    routineList.innerHTML = `
+      <p class="routine-empty">
+        設定から、よくする活動を追加してください。
+      </p>
+    `;
+  } else {
     routineList.innerHTML =
       routineActivities
         .map((activity, index) => {
           return `
             <button
-              class="routine-choice"
               type="button"
+              class="routine-choice"
               data-routine-index="${index}"
             >
               ${escapeHtml(activity)}
@@ -645,12 +1063,6 @@ function renderRoutineActivities() {
           `;
         })
         .join("");
-  } else {
-    routineList.innerHTML = `
-      <p class="routine-empty">
-        設定から、よくする活動を追加してください。
-      </p>
-    `;
   }
 
   routineSettings.classList.toggle(
@@ -658,15 +1070,11 @@ function renderRoutineActivities() {
     !routineSettingsOpen
   );
 
-  const settingsButton =
-    document.getElementById(
-      "toggleRoutineSettingsButton"
-    );
-
-  settingsButton.textContent =
-    routineSettingsOpen
-      ? "設定を閉じる"
-      : "設定";
+  document.getElementById(
+    "toggleRoutineSettingsButton"
+  ).textContent = routineSettingsOpen
+    ? "設定を閉じる"
+    : "設定";
 
   routineEditList.innerHTML =
     routineActivities
@@ -678,7 +1086,6 @@ function renderRoutineActivities() {
               maxlength="100"
               value="${escapeHtml(activity)}"
               data-routine-edit-index="${index}"
-              aria-label="定期的な活動を編集"
             >
 
             <button
@@ -693,944 +1100,146 @@ function renderRoutineActivities() {
       .join("");
 }
 
-function addRoutineActivity() {
-  const activity =
-    newRoutineInput.value.trim();
-
-  if (!activity) {
-        newRoutineInput.focus();
-    return;
-  }
-
-  routineActivities.push(activity);
-
-  persistRoutineActivities();
-
-  newRoutineInput.value = "";
-
-  renderRoutineActivities();
-
-  newRoutineInput.focus();
-}
-
-function updateRoutineActivity(event) {
-  const input =
-    event.target.closest(
-      "[data-routine-edit-index]"
-    );
-
-  if (!input) {
-    return;
-  }
-
-  const index =
-    Number(
-      input.dataset.routineEditIndex
-    );
-
-  const activity =
-    input.value.trim();
-
-  if (!activity) {
-    renderRoutineActivities();
-    return;
-  }
-
-  routineActivities[index] =
-    activity;
-
-  persistRoutineActivities();
-  renderRoutineActivities();
-}
-
-function deleteRoutineActivity(event) {
-  const button =
-    event.target.closest(
-      "[data-routine-delete-index]"
-    );
-
-  if (!button) {
-    return;
-  }
-
-  const index =
-    Number(
-      button.dataset.routineDeleteIndex
-    );
-
-  routineActivities.splice(
-    index,
-    1
-  );
-
-  persistRoutineActivities();
-  renderRoutineActivities();
-}
-
 /* =========================
-   日別メモ
+   印刷
 ========================= */
 
-function loadDailyMemos() {
-  try {
-    const savedData =
-      localStorage.getItem(
-        DAILY_MEMO_STORAGE_KEY
-      );
-
-    if (!savedData) {
-      return {};
-    }
-
-    const parsedData =
-      JSON.parse(savedData);
-
-    return (
-      parsedData &&
-      typeof parsedData === "object" &&
-      !Array.isArray(parsedData)
-    )
-      ? parsedData
-      : {};
-  } catch (error) {
-    console.error(
-      "メモの読み込みに失敗しました。",
-      error
-    );
-
-    return {};
-  }
-}
-
-function persistDailyMemos() {
-  try {
-    localStorage.setItem(
-      DAILY_MEMO_STORAGE_KEY,
-      JSON.stringify(dailyMemos)
-    );
-
-    return true;
-  } catch (error) {
-    console.error(
-      "メモの保存に失敗しました。",
-      error
-    );
-
-    return false;
-  }
-}
-
-function loadDailyMemoForDate(
-  date
-) {
-  const enabled = Boolean(date);
-
-  dailyMemoInput.disabled =
-    !enabled;
-
-  saveDailyMemoButton.disabled =
-    !enabled;
-
-  dailyMemoInput.placeholder =
-    enabled
-      ? "体調、予定、その日の振り返りなど"
-      : "表示日を選択すると、その日のメモを入力できます";
-
-  dailyMemoInput.value =
-    enabled
-      ? dailyMemos[date] || ""
-      : "";
-
-  document.getElementById(
-    "dailyMemoMessage"
-  ).textContent = "";
-
-  autoResizeTextarea(
-    dailyMemoInput
+document
+  .getElementById(
+    "timelinePrintButton"
+  )
+  .addEventListener(
+    "click",
+    printTimeline
   );
-}
 
-function saveDailyMemo() {
-  const date =
-    document.getElementById(
-      "timelineDisplayDate"
-    ).value;
-
-  if (!date) {
-    return;
-  }
-
-  const memo =
-    dailyMemoInput.value.trim();
-
-  if (memo) {
-    dailyMemos[date] = memo;
-  } else {
-    delete dailyMemos[date];
-  }
-
-  const saved =
-    persistDailyMemos();
-
-  document.getElementById(
-    "dailyMemoMessage"
-  ).textContent = saved
-    ? "保存しました。"
-    : "保存できませんでした。";
-}
-
-function autoResizeTextarea(
-  textarea
-) {
-  textarea.style.height = "auto";
-
-  textarea.style.height =
-    `${Math.max(
-      textarea.scrollHeight,
-      88
-    )}px`;
-}
-
-/* =========================
-   記録検索
-========================= */
-
-function runSearch() {
-  const start =
-    document.getElementById(
-      "searchStartDate"
-    ).value;
-
-  const end =
-    document.getElementById(
-      "searchEndDate"
-    ).value;
-
-  const keyword =
-    document.getElementById(
-      "searchKeyword"
-    ).value.trim();
-
-  const searchMessage =
-    document.getElementById(
-      "searchMessage"
+document
+  .getElementById("graphPrintButton")
+  .addEventListener("click", () => {
+    document.body.classList.add(
+      "print-graph"
     );
 
-  if (!start || !end) {
-    searchMessage.textContent =
-      "開始日と終了日を選択してください。";
+    setTimeout(() => {
+      window.print();
+    }, 100);
+  });
 
-    return;
-  }
-
-  if (start > end) {
-    searchMessage.textContent =
-      "開始日は終了日以前にしてください。";
-
-    return;
-  }
-
-  if (!keyword) {
-    searchMessage.textContent =
-      "検索ワードを入力してください。";
-
-    return;
-  }
-
-  searchMessage.textContent = "";
-
-  const normalizedKeyword =
-    keyword.toLocaleLowerCase(
-      "ja-JP"
+window.addEventListener(
+  "afterprint",
+  () => {
+    document.body.classList.remove(
+      "print-timeline",
+      "print-graph"
     );
+  }
+);
 
-  const items =
-    sortedRecords().filter(record => {
-      return (
-        record.date >= start &&
-        record.date <= end &&
-        record.activity
-          .toLocaleLowerCase(
-            "ja-JP"
-          )
-          .includes(
-            normalizedKeyword
-          )
-      );
-    });
+function printTimeline() {
+  buildTimelinePrintArea();
 
-  renderSearchResults(items);
+  document.body.classList.add(
+    "print-timeline"
+  );
+
+  setTimeout(() => {
+    window.print();
+  }, 100);
 }
 
-function renderSearchResults(items) {
-  const results =
+function buildTimelinePrintArea() {
+  const printArea =
     document.getElementById(
-      "searchResults"
+      "timelinePrintPages"
     );
 
-  document.getElementById(
-    "searchResultCount"
-  ).textContent = `${items.length}件`;
+  const items = getTimelineRecords();
 
-  if (items.length === 0) {
-    results.innerHTML = `
-      <p class="empty-message">
-        条件に一致する記録がありません。
-      </p>
-    `;
+  const selectedDate =
+    timelineDateInput.value;
 
-    return;
-  }
+  const memo = selectedDate
+    ? dailyMemos[selectedDate] || ""
+    : "";
 
-  results.innerHTML =
-    items.map(record => {
-      return `
-        <article class="search-result-item">
-          <div class="record-head">
-            <time class="record-date">
-              ${formatDate(record.date)}
-              ${record.time}
-            </time>
+  const recordsHtml = items.length
+    ? items
+        .map(record => {
+          return `
+            <article class="timeline-print-item">
+              <div class="timeline-print-record-head">
+                <span>
+                  ${formatDate(record.date)}
+                  ${escapeHtml(record.time)}
+                </span>
 
-            <span
-              class="mood-badge"
-              style="background:${moodColor(
-                record.mood
-              )}"
-            >
-              気分 ${formatMood(record.mood)}
-            </span>
-          </div>
+                <span>
+                  気分
+                  ${formatMood(
+                    Number(record.mood)
+                  )}
+                </span>
+              </div>
 
-          <p class="activity-text">${
-            escapeHtml(record.activity)
-          }</p>
-        </article>
+              <p>
+                ${escapeHtml(record.activity)}
+              </p>
+            </article>
+          `;
+        })
+        .join("")
+    : `
+        <p class="timeline-print-empty">
+          この日の記録はありません。
+        </p>
       `;
-    }).join("");
-}
 
-function clearSearch() {
-  document.getElementById(
-    "searchStartDate"
-  ).value = "";
+  const memoHtml = memo
+    ? `
+        <section class="timeline-print-memos">
+          <h2>メモ</h2>
 
-  document.getElementById(
-    "searchEndDate"
-  ).value = "";
+          <p>${escapeHtml(memo)}</p>
+        </section>
+      `
+    : "";
 
-  document.getElementById(
-    "searchKeyword"
-  ).value = "";
+  printArea.innerHTML = `
+    <section class="timeline-print-page">
+      <div class="timeline-print-header">
+        <h2>活動記録表</h2>
+        <span>${items.length}件</span>
+      </div>
 
-  document.getElementById(
-    "searchMessage"
-  ).textContent = "";
+      <div class="timeline-print-records">
+        ${recordsHtml}
+      </div>
 
-  document.getElementById(
-    "searchResultCount"
-  ).textContent = "0件";
-
-  document.getElementById(
-    "searchResults"
-  ).innerHTML = `
-    <p class="empty-message">
-      期間と検索ワードを入力してください。
-    </p>
+      ${memoHtml}
+    </section>
   `;
 }
 
 /* =========================
-   現在日時
+   下部メニュー
 ========================= */
 
-function getLocalDateAndTime(
-  date = new Date()
-) {
-  const year =
-    date.getFullYear();
-
-  const month =
-    String(
-      date.getMonth() + 1
-    ).padStart(
-      2,
-      "0"
-    );
-
-  const day =
-    String(
-      date.getDate()
-    ).padStart(
-      2,
-      "0"
-    );
-
-  const hours =
-    String(
-      date.getHours()
-    ).padStart(
-      2,
-      "0"
-    );
-
-  const minutes =
-    String(
-      date.getMinutes()
-    ).padStart(
-      2,
-      "0"
-    );
-
-  return {
-    date:
-      `${year}-${month}-${day}`,
-
-    time:
-      `${hours}:${minutes}`
-  };
-}
-
-function setCurrentDateTime() {
-  const current =
-    getLocalDateAndTime();
-
-  dateInput.value =
-    current.date;
-
-  timeInput.value =
-    current.time;
-}
-
-/* =========================
-   気分の選択
-========================= */
-
-function selectMood(mood) {
-  selectedMood = mood;
-
-  moodButtons.forEach(button => {
-    const buttonMood =
-      Number(
-        button.dataset.mood
-      );
-
-    const isSelected =
-      buttonMood === mood;
-
-    button.classList.toggle(
-      "selected",
-      isSelected
-    );
-
-    button.setAttribute(
-      "aria-pressed",
-      String(isSelected)
+document
+  .querySelectorAll(".nav-button")
+  .forEach(button => {
+    button.addEventListener(
+      "click",
+      () => {
+        showPage(
+          button.dataset.page
+        );
+      }
     );
   });
-}
-
-/* =========================
-   記録の保存
-========================= */
-
-function saveRecord() {
-  const date =
-    dateInput.value;
-
-  const time =
-    normalizeTypedTime(
-      timeInput.value
-    );
-
-  const activity =
-    activityInput.value.trim();
-
-  if (!date) {
-    showMessage(
-      "日付を入力してください。"
-    );
-
-    return;
-  }
-
-  if (!time) {
-    showMessage(
-      "時刻を800や13:30の形式で入力してください。"
-    );
-
-    return;
-  }
-
-  timeInput.value =
-    time;
-
-  if (!activity) {
-    showMessage(
-      "活動内容を入力してください。"
-    );
-
-    return;
-  }
-
-  if (selectedMood === null) {
-    showMessage(
-      "気分を選択してください。"
-    );
-
-    return;
-  }
-
-  const wasEditing =
-    editingId !== null;
-
-  const record = {
-    id:
-      editingId ||
-      createRecordId(),
-
-    date: date,
-    time: time,
-    activity: activity,
-    mood: selectedMood
-  };
-
-  if (wasEditing) {
-    records =
-      records.map(item => {
-        if (
-          item.id === editingId
-        ) {
-          return record;
-        }
-
-        return item;
-      });
-  } else {
-    records.push(record);
-  }
-
-  persistRecords();
-  renderTimeline();
-  resetForm(true);
-
-  showMessage(
-    wasEditing
-      ? "記録を更新しました。"
-      : "記録しました。",
-    true
-  );
-}
-
-function createRecordId() {
-  return (
-    Date.now().toString() +
-    "-" +
-    Math.random()
-      .toString(16)
-      .slice(2)
-  );
-}
-
-/* =========================
-   入力欄の初期化
-========================= */
-
-function resetForm(
-  keepMessage = false
-) {
-  editingId = null;
-
-  activityInput.value = "";
-
-  selectMood(null);
-  setCurrentDateTime();
-
-  saveButton.textContent =
-    "記録する";
-
-  cancelEditButton.classList.add(
-    "hidden"
-  );
-
-  if (!keepMessage) {
-    showMessage("");
-  }
-}
-
-function showMessage(
-  text,
-  success = false
-) {
-  message.textContent = text;
-
-  message.classList.toggle(
-    "success",
-    success
-  );
-}
-
-/* =========================
-   並べ替え
-========================= */
-
-function sortedRecords() {
-  return [...records].sort(
-    (first, second) => {
-      const firstDateTime =
-        `${first.date}T${getSortableTime(
-          first.time
-        )}`;
-
-      const secondDateTime =
-        `${second.date}T${getSortableTime(
-          second.time
-        )}`;
-
-      return firstDateTime.localeCompare(
-        secondDateTime
-      );
-    }
-  );
-}
-
-/* =========================
-   日付フィルター
-========================= */
-
-function filteredRecords(filter) {
-  return sortedRecords().filter(
-    record => {
-      const afterStart =
-        !filter.start ||
-        record.date >=
-          filter.start;
-
-      const beforeEnd =
-        !filter.end ||
-        record.date <=
-          filter.end;
-
-      return (
-        afterStart &&
-        beforeEnd
-      );
-    }
-  );
-}
-
-function validateDisplayDate(
-  date,
-  messageId
-) {
-  const filterMessage =
-    document.getElementById(
-      messageId
-    );
-
-  if (!date) {
-    filterMessage.textContent =
-      "表示日を選択してください。";
-
-    return false;
-  }
-
-  filterMessage.textContent = "";
-
-  return true;
-}
-
-/* 時系列の日付フィルター */
-
-function applyTimelineFilter() {
-  const displayDate =
-    document.getElementById(
-      "timelineDisplayDate"
-    ).value;
-
-  if (
-    !validateDisplayDate(
-      displayDate,
-      "timelineFilterMessage"
-    )
-  ) {
-    return;
-  }
-
-  timelineFilter = {
-    start: displayDate,
-    end: displayDate
-  };
-
-  loadDailyMemoForDate(
-    displayDate
-  );
-
-  renderTimeline();
-}
-
-function resetTimelineFilter() {
-  document.getElementById(
-    "timelineDisplayDate"
-  ).value = "";
-
-  document.getElementById(
-    "timelineFilterMessage"
-  ).textContent = "";
-
-  timelineFilter = {
-    start: "",
-    end: ""
-  };
-
-  loadDailyMemoForDate("");
-
-  renderTimeline();
-}
-
-/* グラフの日付フィルター */
-
-function applyGraphFilter() {
-  const displayDate =
-    document.getElementById(
-      "graphDisplayDate"
-    ).value;
-
-  if (
-    !validateDisplayDate(
-      displayDate,
-      "graphFilterMessage"
-    )
-  ) {
-    return;
-  }
-
-  graphFilter = {
-    start: displayDate,
-    end: displayDate
-  };
-
-  drawGraph();
-}
-
-function resetGraphFilter() {
-  document.getElementById(
-    "graphDisplayDate"
-  ).value = "";
-
-  document.getElementById(
-    "graphFilterMessage"
-  ).textContent = "";
-
-  graphFilter = {
-    start: "",
-    end: ""
-  };
-
-  drawGraph();
-}
-
-/* =========================
-   時系列表示
-========================= */
-
-function getTimelineItems() {
-  return filteredRecords(
-    timelineFilter
-  );
-}
-
-function renderTimeline() {
-  const timeline =
-    document.getElementById(
-      "timeline"
-    );
-
-  const recordCount =
-    document.getElementById(
-      "recordCount"
-    );
-
-  const clearAllButton =
-    document.getElementById(
-      "clearAllButton"
-    );
-
-  const items =
-    getTimelineItems();
-
-  recordCount.textContent =
-    `${items.length}件`;
-
-  clearAllButton.classList.toggle(
-    "hidden",
-    records.length === 0
-  );
-
-  if (items.length === 0) {
-    let emptyText =
-      "まだ記録がありません。";
-
-    if (records.length > 0) {
-      emptyText =
-        "条件に一致する記録がありません。";
-    }
-
-    timeline.innerHTML = `
-      <p class="empty-message">
-        ${emptyText}
-      </p>
-    `;
-
-    return;
-  }
-
-  timeline.innerHTML =
-    items.map(record => {
-      return `
-        <article class="timeline-item">
-          <div class="record-head">
-            <time
-              class="record-date"
-              datetime="${record.date}T${getSortableTime(
-                record.time
-              )}"
-            >
-              ${formatDate(record.date)}
-              ${record.time}
-            </time>
-
-            <span
-              class="mood-badge"
-              style="background:${moodColor(
-                record.mood
-              )}"
-            >
-              気分 ${formatMood(record.mood)}
-            </span>
-          </div>
-
-          <p class="activity-text">${
-            escapeHtml(
-              record.activity
-            )
-          }</p>
-
-          <div class="record-actions">
-            <button
-              type="button"
-              onclick="editRecord('${record.id}')"
-            >
-              編集
-            </button>
-
-            <button
-              type="button"
-              class="delete-button"
-              onclick="deleteRecord('${record.id}')"
-            >
-              削除
-            </button>
-          </div>
-        </article>
-      `;
-    }).join("");
-}
-
-/* =========================
-   編集
-========================= */
-
-function editRecord(id) {
-  const record =
-    records.find(item => {
-      return item.id === id;
-    });
-
-  if (!record) {
-    return;
-  }
-
-  editingId = id;
-
-  dateInput.value =
-    record.date;
-
-  timeInput.value =
-    record.time;
-
-  activityInput.value =
-    record.activity;
-
-  selectMood(record.mood);
-
-  saveButton.textContent =
-    "更新する";
-
-  cancelEditButton.classList.remove(
-    "hidden"
-  );
-
-  showMessage("");
-  showPage("inputPage");
-
-  activityInput.focus();
-}
-
-/* =========================
-   削除
-========================= */
-
-function deleteRecord(id) {
-  const confirmed =
-    window.confirm(
-      "この記録を削除しますか？"
-    );
-
-  if (!confirmed) {
-    return;
-  }
-
-  records =
-    records.filter(item => {
-      return item.id !== id;
-    });
-
-  persistRecords();
-  renderTimeline();
-}
-
-function clearAllRecords() {
-  if (records.length === 0) {
-    return;
-  }
-
-  const confirmed =
-    window.confirm(
-      "すべての記録を削除します。" +
-      "元に戻せません。よろしいですか？"
-    );
-
-  if (!confirmed) {
-    return;
-  }
-
-  records = [];
-
-  persistRecords();
-  renderTimeline();
-  drawGraph();
-}
-
-/* =========================
-   画面切り替え
-========================= */
 
 function showPage(pageId) {
   document
-    .querySelectorAll(
-      ".page"
-    )
+    .querySelectorAll(".page")
     .forEach(page => {
       page.classList.toggle(
         "active",
@@ -1639,14 +1248,11 @@ function showPage(pageId) {
     });
 
   document
-    .querySelectorAll(
-      ".nav-button"
-    )
+    .querySelectorAll(".nav-button")
     .forEach(button => {
       button.classList.toggle(
         "active",
-        button.dataset.page ===
-          pageId
+        button.dataset.page === pageId
       );
     });
 
@@ -1654,6 +1260,14 @@ function showPage(pageId) {
     top: 0,
     behavior: "smooth"
   });
+
+  if (pageId === "timelinePage") {
+    renderTimeline();
+
+    loadDailyMemo(
+      timelineDateInput.value
+    );
+  }
 
   if (pageId === "graphPage") {
     requestAnimationFrame(
@@ -1663,732 +1277,153 @@ function showPage(pageId) {
 }
 
 /* =========================
-   印刷
+   共通処理
 ========================= */
 
-function printSelectedPage(
-  pageType
-) {
-  clearPrintMode();
+function getSortedRecords() {
+  return [...records].sort(
+    (first, second) => {
+      const firstValue =
+        `${first.date}T${getSortableTime(
+          first.time
+        )}`;
 
-  if (pageType === "graph") {
-    document.body.classList.add(
-      "print-graph"
-    );
+      const secondValue =
+        `${second.date}T${getSortableTime(
+          second.time
+        )}`;
 
-    drawGraph();
-
-    setTimeout(() => {
-      window.print();
-    }, 150);
-
-    return;
-  }
-
-  document.body.classList.add(
-    "print-timeline"
-  );
-
-  buildTimelinePrintPages();
-
-  window.print();
-}
-
-function clearPrintMode() {
-  document.body.classList.remove(
-    "print-timeline",
-    "print-graph"
+      return firstValue.localeCompare(
+        secondValue
+      );
+    }
   );
 }
 
-/* =========================
-   印刷用ページの作成
-========================= */
+function setCurrentDateTime() {
+  const now = new Date();
 
-function buildTimelinePrintPages() {
-  const printArea =
-    document.getElementById(
-      "timelinePrintPages"
+  dateInput.value =
+    formatInputDate(now);
+
+  timeInput.value =
+    `${String(now.getHours()).padStart(
+      2,
+      "0"
+    )}:` +
+    String(now.getMinutes()).padStart(
+      2,
+      "0"
     );
+}
 
-  const items =
-    getTimelineItems();
+function getToday() {
+  return formatInputDate(
+    new Date()
+  );
+}
 
-  const memoHtml =
-    renderPrintableMemos(items);
+function formatInputDate(date) {
+  const year = date.getFullYear();
 
-  if (items.length === 0) {
-    printArea.innerHTML = `
-      <section class="timeline-print-page">
+  const month = String(
+    date.getMonth() + 1
+  ).padStart(2, "0");
 
-        <div class="timeline-print-header">
-          <h2>活動記録表</h2>
-          <span>0件</span>
-        </div>
+  const day = String(
+    date.getDate()
+  ).padStart(2, "0");
 
-        <p class="timeline-print-empty">
-          条件に一致する記録がありません。
-        </p>
+  return `${year}-${month}-${day}`;
+}
 
-        ${memoHtml}
+function normalizeTypedTime(value) {
+  const text = String(value)
+    .trim()
+    .replace(/\s/g, "");
 
-      </section>
-    `;
-
-    return;
+  if (!text) {
+    return null;
   }
 
-  /*
-    =========================
-    日付ごとにグループ化
-    =========================
-  */
+  let hourText = "";
+  let minuteText = "";
 
-  const dateGroups = [];
+  if (text.includes(":")) {
+    const parts = text.split(":");
 
-  items.forEach(record => {    let group =
-      dateGroups.find(item => {
-        return item.date === record.date;
-      });
-
-    if (!group) {
-      group = {
-        date: record.date,
-        records: []
-      };
-
-      dateGroups.push(group);
+    if (parts.length !== 2) {
+      return null;
     }
 
-    group.records.push(record);
-  });
-
-  /*
-    =========================
-    印刷ページを作成
-    =========================
-
-    1ページ
-
-    ┌────────┬────────┐
-    │ 左列   │ 右列   │
-    │        │        │
-    └────────┴────────┘
-
-    日付グループ単位で配置する
-  */
-
-  const pages = [];
-
-  let currentPage = {
-    left: [],
-    right: []
-  };
-
-  let currentColumn = "left";
-
-  /*
-    1列に入れる記録数の目安。
-
-    現在の印刷サイズなら
-    約12件程度が目安。
-
-    日付見出しも1件分として
-    計算する。
-  */
-
-  const MAX_UNITS_PER_COLUMN = 13;
-
-  let usedUnits = 0;
-
-  dateGroups.forEach(group => {
-    /*
-      日付見出し = 1
-      記録 = 件数
-    */
-
-    const groupUnits =
-      group.records.length + 1;
-
-    /*
-      今の列に入らない場合
-    */
+    hourText = parts[0];
+    minuteText = parts[1];
+  } else {
+    const numbers =
+      text.replace(/\D/g, "");
 
     if (
-      usedUnits > 0 &&
-      usedUnits + groupUnits >
-        MAX_UNITS_PER_COLUMN
+      numbers.length === 1 ||
+      numbers.length === 2
     ) {
-      /*
-        左列なら右列へ
-      */
-
-      if (currentColumn === "left") {
-        currentColumn = "right";
-
-        usedUnits = 0;
-      } else {
-        /*
-          右列もいっぱいなら
-          次ページへ
-        */
-
-        pages.push(currentPage);
-
-        currentPage = {
-          left: [],
-          right: []
-        };
-
-        currentColumn = "left";
-
-        usedUnits = 0;
-      }
+      hourText = numbers;
+      minuteText = "00";
+    } else if (
+      numbers.length === 3 ||
+      numbers.length === 4
+    ) {
+      hourText = numbers.slice(0, -2);
+      minuteText = numbers.slice(-2);
+    } else {
+      return null;
     }
-
-    /*
-      日付グループを現在の列へ追加
-    */
-
-    currentPage[
-      currentColumn
-    ].push(group);
-
-    usedUnits += groupUnits;
-  });
-
-  /*
-    最後のページを追加
-  */
-
-  if (
-    currentPage.left.length > 0 ||
-    currentPage.right.length > 0
-  ) {
-    pages.push(currentPage);
   }
 
-  /*
-    =========================
-    HTML生成
-    =========================
-  */
+  if (
+    !/^\d{1,2}$/.test(hourText) ||
+    !/^\d{1,2}$/.test(minuteText)
+  ) {
+    return null;
+  }
 
-  printArea.innerHTML =
-    pages
-      .map((page, pageIndex) => {
-        return `
-          <section class="timeline-print-page">
+  const hour = Number(hourText);
+  const minute = Number(minuteText);
 
-            <div class="timeline-print-header">
+  if (
+    hour < 0 ||
+    hour > 23 ||
+    minute < 0 ||
+    minute > 59
+  ) {
+    return null;
+  }
 
-              <h2>
-                活動記録表
-              </h2>
-
-              <span>
-                ${
-                  pageIndex === 0
-                    ? `${items.length}件`
-                    : ""
-                }
-              </span>
-
-            </div>
-
-            <div class="timeline-print-columns">
-
-              <div class="timeline-print-column timeline-print-left">
-
-                ${
-                  renderTimelinePrintGroups(
-                    page.left
-                  )
-                }
-
-              </div>
-
-              <div class="timeline-print-column timeline-print-right">
-
-                ${
-                  renderTimelinePrintGroups(
-                    page.right
-                  )
-                }
-
-              </div>
-
-            </div>
-
-            ${
-              pageIndex === pages.length - 1
-                ? memoHtml
-                : ""
-            }
-
-          </section>
-        `;
-      })
-      .join("");
+  return (
+    `${String(hour).padStart(
+      2,
+      "0"
+    )}:` +
+    String(minute).padStart(
+      2,
+      "0"
+    )
+  );
 }
 
-function renderPrintableMemos(items) {
-  const selectedDate =
-    document.getElementById(
-      "timelineDisplayDate"
-    ).value;
+function getSortableTime(value) {
+  return (
+    normalizeTypedTime(value) ||
+    "00:00"
+  );
+}
 
-  const dates = selectedDate
-    ? [selectedDate]
-    : [
-        ...new Set(
-          items.map(record => {
-            return record.date;
-          })
-        )
-      ];
-
-  const memos = dates
-    .filter(date => {
-      return Boolean(
-        dailyMemos[date]
-      );
-    })
-    .map(date => {
-      return {
-        date: date,
-        text: dailyMemos[date]
-      };
-    });
-
-  if (memos.length === 0) {
+function formatDate(value) {
+  if (!value) {
     return "";
   }
 
-  return `
-    <section class="timeline-print-memos">
-      <h2>メモ</h2>
-
-      ${memos.map(memo => {
-        return `
-          <div class="timeline-print-memo">
-            <h3>${formatDate(memo.date)}</h3>
-            <p>${escapeHtml(memo.text)}</p>
-          </div>
-        `;
-      }).join("")}
-    </section>
-  `;
-}
-
-/* =========================
-   日付グループをHTML化
-========================= */
-
-function renderTimelinePrintGroups(
-  groups
-) {
-  return groups
-    .map(group => {
-      return `
-        <section class="timeline-print-date-group">
-
-          <h3 class="timeline-print-date-heading">
-            ${formatDate(group.date)}
-          </h3>
-
-          <div class="timeline-print-date-records">
-
-            ${
-              group.records
-                .map(record => {
-                  return `
-                    <article class="timeline-print-item">
-
-                      <div class="timeline-print-record-head">
-
-                        <time
-                          datetime="${record.date}T${getSortableTime(
-                            record.time
-                          )}"
-                        >
-                          ${record.time}
-                        </time>
-
-                        <span>
-                          気分 ${formatMood(
-                            record.mood
-                          )}
-                        </span>
-
-                      </div>
-
-                      <p>${
-                        escapeHtml(
-                          record.activity
-                        )
-                      }</p>
-
-                    </article>
-                  `;
-                })
-                .join("")
-            }
-
-          </div>
-
-        </section>
-      `;
-    })
-    .join("");
-}
-
-/* =========================
-   グラフ
-========================= */
-
-function drawGraph() {
-  const canvas =
-    document.getElementById(
-      "moodChart"
-    );
-
-  const emptyMessage =
-    document.getElementById(
-      "graphEmpty"
-    );
-
-  const items =
-    filteredRecords(
-      graphFilter
-    );
-
-  canvas.classList.toggle(
-    "hidden",
-    items.length === 0
-  );
-
-  emptyMessage.classList.toggle(
-    "hidden",
-    items.length > 0
-  );
-
-  emptyMessage.textContent =
-    records.length > 0
-      ? "指定した期間の記録がありません。"
-      : "記録するとグラフが表示されます。";
-
-  if (items.length === 0) {
-    return;
-  }
-
-  const rectangle =
-    canvas.getBoundingClientRect();
-
-  const pixelRatio =
-    window.devicePixelRatio || 1;
-
-  const width =
-    Math.max(
-      rectangle.width,
-      300
-    );
-
-  const height =
-    rectangle.height || 360;
-
-  canvas.width =
-    Math.round(
-      width * pixelRatio
-    );
-
-  canvas.height =
-    Math.round(
-      height * pixelRatio
-    );
-
-  const context =
-    canvas.getContext(
-      "2d"
-    );
-
-  context.scale(
-    pixelRatio,
-    pixelRatio
-  );
-
-  const padding = {
-    top: 22,
-    right: 18,
-    bottom: 68,
-    left: 43
-  };
-
-  const plotWidth =
-    width -
-    padding.left -
-    padding.right;
-
-  const plotHeight =
-    height -
-    padding.top -
-    padding.bottom;
-
-  const times =
-    items.map(record => {
-      return new Date(
-        `${record.date}T${getSortableTime(
-          record.time
-        )}:00`
-      ).getTime();
-    });
-
-  const minimumTime =
-    Math.min(...times);
-
-  const maximumTime =
-    Math.max(...times);
-
-  const timeRange =
-    maximumTime -
-    minimumTime;
-
-  function getX(
-    time,
-    index
-  ) {
-    if (timeRange > 0) {
-      return (
-        padding.left +
-        (
-          (time - minimumTime) /
-          timeRange
-        ) *
-        plotWidth
-      );
-    }
-
-    return (
-      padding.left +
-      plotWidth / 2 +
-      (
-        index -
-        (items.length - 1) / 2
-      ) *
-      10
-    );
-  }
-
-  function getY(mood) {
-    return (
-      padding.top +
-      (
-        (3 - mood) /
-        6
-      ) *
-      plotHeight
-    );
-  }
-
-  /* 目盛り線 */
-
-  context.font =
-    "12px sans-serif";
-
-  context.textAlign =
-    "right";
-
-  context.textBaseline =
-    "middle";
-
-  for (
-    let mood = -3;
-    mood <= 3;
-    mood++
-  ) {
-    const y =
-      getY(mood);
-
-    context.strokeStyle =
-      mood === 0
-        ? "#9dada6"
-        : "#e2e9e6";
-
-    context.lineWidth =
-      mood === 0
-        ? 1.5
-        : 1;
-
-    context.beginPath();
-
-    context.moveTo(
-      padding.left,
-      y
-    );
-
-    context.lineTo(
-      width - padding.right,
-      y
-    );
-
-    context.stroke();
-
-    context.fillStyle =
-      "#627069";
-
-    context.fillText(
-      formatMood(mood),
-      padding.left - 8,
-      y
-    );
-  }
-
-  /* 折れ線 */
-
-  if (items.length > 1) {
-    context.strokeStyle =
-      "#58a98a";
-
-    context.lineWidth = 3;
-    context.lineJoin = "round";
-
-    context.beginPath();
-
-    items.forEach(
-      (record, index) => {
-        const x =
-          getX(
-            times[index],
-            index
-          );
-
-        const y =
-          getY(record.mood);
-
-        if (index === 0) {
-          context.moveTo(
-            x,
-            y
-          );
-        } else {
-          context.lineTo(
-            x,
-            y
-          );
-        }
-      }
-    );
-
-    context.stroke();
-  }
-
-  /* グラフの点 */
-
-  items.forEach(
-    (record, index) => {
-      const x =
-        getX(
-          times[index],
-          index
-        );
-
-      const y =
-        getY(record.mood);
-
-      context.fillStyle =
-        moodColor(
-          record.mood
-        );
-
-      context.beginPath();
-
-      context.arc(
-        x,
-        y,
-        5,
-        0,
-        Math.PI * 2
-      );
-
-      context.fill();
-
-      context.strokeStyle =
-        "white";
-
-      context.lineWidth = 2;
-
-      context.stroke();
-    }
-  );
-
-  /* 横軸の日付 */
-
-  const labelIndexes = [
-    ...new Set([
-      0,
-
-      Math.floor(
-        (items.length - 1) / 2
-      ),
-
-      items.length - 1
-    ])
-  ];
-
-  context.fillStyle =
-    "#627069";
-
-  context.textAlign =
-    "center";
-
-  context.textBaseline =
-    "top";
-
-  labelIndexes.forEach(index => {
-    const dateParts =
-      items[index].date.split(
-        "-"
-      );
-
-    const month =
-      Number(dateParts[1]);
-
-    const day =
-      Number(dateParts[2]);
-
-    const x =
-      getX(
-        times[index],
-        index
-      );
-
-    context.fillText(
-      `${month}/${day}`,
-      x,
-      height -
-        padding.bottom +
-        13
-    );
-
-    context.fillText(
-      items[index].time,
-      x,
-      height -
-        padding.bottom +
-        28
-    );
-  });
-}
-
-/* =========================
-   表示形式
-========================= */
-
-function formatDate(dateText) {
   const date =
-    new Date(
-      `${dateText}T00:00:00`
-    );
+    new Date(`${value}T00:00:00`);
 
   return new Intl.DateTimeFormat(
     "ja-JP",
@@ -2423,10 +1458,58 @@ function moodColor(mood) {
     "#238d59"
   ];
 
-  return colors[mood + 3];
+  return colors[mood + 3] || "#809087";
 }
 
-function escapeHtml(text) {
+function createRecordId() {
+  return (
+    Date.now().toString() +
+    "-" +
+    Math.random()
+      .toString(16)
+      .slice(2)
+  );
+}
+
+function loadJson(key, defaultValue) {
+  try {
+    const saved =
+      localStorage.getItem(key);
+
+    if (!saved) {
+      return defaultValue;
+    }
+
+    return JSON.parse(saved);
+  } catch (error) {
+    console.error(
+      `${key}の読み込みに失敗しました。`,
+      error
+    );
+
+    return defaultValue;
+  }
+}
+
+function saveJson(key, value) {
+  try {
+    localStorage.setItem(
+      key,
+      JSON.stringify(value)
+    );
+
+    return true;
+  } catch (error) {
+    console.error(
+      `${key}の保存に失敗しました。`,
+      error
+    );
+
+    return false;
+  }
+}
+
+function escapeHtml(value) {
   const replacements = {
     "&": "&amp;",
     "<": "&lt;",
@@ -2435,154 +1518,35 @@ function escapeHtml(text) {
     '"': "&quot;"
   };
 
-  return text.replace(
+  return String(value).replace(
     /[&<>'"]/g,
     character => {
-      return replacements[
-        character
-      ];
+      return replacements[character];
     }
   );
 }
 
-function debounce(
-  functionToRun,
-  delay
-) {
-  let timer;
+/* HTML内のonclickから使用 */
 
-  return (...argumentsList) => {
-    clearTimeout(timer);
+window.editRecord = editRecord;
+window.deleteRecord = deleteRecord;
 
-    timer = setTimeout(() => {
-      functionToRun(
-        ...argumentsList
-      );
-    }, delay);
-  };
-}
+/* 全設定が終わってから初期化 */
 
-/* =========================
-   タイピングされた時刻の変換
-========================= */
+initializeApp();
 
-function normalizeTypedTime(value) {
-  const input =
-    String(value)
-      .trim()
-      .replace(
-        /\s/g,
-        ""
-      );
+function initializeApp() {
+  setCurrentDateTime();
 
-  if (!input) {
-    return null;
-  }
+  const today = getToday();
 
-  let hourText = "";
-  let minuteText = "";
+  timelineDateInput.value = today;
+  graphDateInput.value = today;
 
-  if (input.includes(":")) {
-    const parts =
-      input.split(":");
+  renderTimeline();
+  loadDailyMemo(today);
+  renderRoutineActivities();
+  clearSearchResults();
 
-    if (parts.length !== 2) {
-      return null;
-    }
-
-    hourText =
-      parts[0];
-
-    minuteText =
-      parts[1];
-  } else {
-    const numbers =
-      input.replace(
-        /\D/g,
-        ""
-      );
-
-    if (
-      numbers.length === 1 ||
-      numbers.length === 2
-    ) {
-      hourText =
-        numbers;
-
-      minuteText =
-        "00";
-    } else if (
-      numbers.length === 3 ||
-      numbers.length === 4
-    ) {
-      hourText =
-        numbers.slice(
-          0,
-          -2
-        );
-
-      minuteText =
-        numbers.slice(
-          -2
-        );
-    } else {
-      return null;
-    }
-  }
-
-  if (
-    !/^\d{1,2}$/.test(hourText) ||
-    !/^\d{1,2}$/.test(minuteText)
-  ) {
-    return null;
-  }
-
-  const hour =
-    Number(hourText);
-
-  const minute =
-    Number(minuteText);
-
-  if (
-    hour < 0 ||
-    hour > 23 ||
-    minute < 0 ||
-    minute > 59
-  ) {
-    return null;
-  }
-
-  return (
-    `${hour}:` +
-    String(minute).padStart(
-      2,
-      "0"
-    )
-  );
-}
-
-/* 並べ替えやグラフ用に08:00形式へ変換 */
-
-function getSortableTime(value) {
-  const normalizedTime =
-    normalizeTypedTime(value);
-
-  if (!normalizedTime) {
-    return "00:00";
-  }
-
-  const [
-    hour,
-    minute
-  ] =
-    normalizedTime.split(":");
-
-  return (
-    String(hour).padStart(
-      2,
-      "0"
-    ) +
-    ":" +
-    minute
-  );
+  requestAnimationFrame(drawGraph);
 }

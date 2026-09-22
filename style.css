@@ -1707,9 +1707,23 @@ input[type="date"]::-webkit-date-and-time-value {
   margin: 0 0 7px;
 }
 
-.search-filter-card input[type="search"] {
+.search-filter-card label[for="searchMood"] {
+  margin-top: 14px;
+}
+
+.search-filter-card input[type="search"],
+.search-filter-card select {
   width: 100%;
   box-sizing: border-box;
+}
+
+.search-filter-card select {
+  min-height: 44px;
+  padding: 10px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  font: inherit;
 }
 
 .search-actions {
