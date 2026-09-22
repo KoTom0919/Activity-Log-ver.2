@@ -534,7 +534,7 @@ fieldset legend {
   z-index: 20;
   display: grid;
   grid-template-columns:
-    repeat(3, 1fr);
+    repeat(4, 1fr);
   background: white;
   border-top: 1px solid var(--border);
   box-shadow:
@@ -1563,4 +1563,179 @@ input[type="date"]::-webkit-date-and-time-value {
     font-size: 10pt;
   }
 
+}
+
+@media screen and (max-width: 520px) {
+  .daily-memo-card,
+  .search-filter-card {
+    padding: 11px 8px;
+  }
+
+  .search-period {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .daily-memo-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .daily-memo-actions button {
+    width: 100%;
+  }
+
+  .nav-button {
+    padding-right: 2px;
+    padding-left: 2px;
+    font-size: 0.72rem;
+  }
+}
+
+@media print {
+  .daily-memo-card,
+  #searchPage {
+    display: none !important;
+  }
+
+  .timeline-print-memos {
+    display: block;
+    margin-top: 4mm;
+    padding-top: 3mm;
+    border-top: 0.3mm solid #777;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .timeline-print-memos h2 {
+    margin: 0 0 2mm;
+    font-size: 10pt;
+  }
+
+  .timeline-print-memo {
+    margin-bottom: 2mm;
+    padding: 2mm;
+    border: 0.25mm solid #aaa;
+    border-radius: 1.2mm;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .timeline-print-memo h3 {
+    margin: 0 0 1mm;
+    font-size: 7.5pt;
+  }
+
+  .timeline-print-memo p {
+    margin: 0;
+    font-size: 7.5pt;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+  }
+}
+
+/* 日付ごとのメモ */
+
+.daily-memo-card {
+  width: 100%;
+  margin-bottom: 18px;
+  padding: 14px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
+.daily-memo-card label {
+  margin: 0 0 7px;
+}
+
+#dailyMemo {
+  width: 100%;
+  min-height: 88px;
+  max-height: none;
+  overflow-y: hidden;
+  resize: none;
+  box-sizing: border-box;
+}
+
+#dailyMemo:disabled {
+  color: var(--muted);
+  background: #f1f4f2;
+}
+
+.daily-memo-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 9px;
+}
+
+.daily-memo-actions p {
+  min-height: 1.3em;
+  margin: 0;
+  color: var(--main-dark);
+  font-size: 0.88rem;
+}
+
+.daily-memo-actions button {
+  flex: 0 0 auto;
+}
+
+/* 検索画面 */
+
+.search-filter-card {
+  width: 100%;
+  margin-bottom: 18px;
+  padding: 14px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
+.search-period {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.search-filter-card > label {
+  margin: 0 0 7px;
+}
+
+.search-filter-card input[type="search"] {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.search-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.search-result-item {
+  margin-bottom: 12px;
+  padding: 16px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+@media screen and (max-width: 520px) {
+  .daily-memo-card,
+  .search-filter-card {
+    padding: 11px 8px;
+  }
+
+  .search-period {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
 }

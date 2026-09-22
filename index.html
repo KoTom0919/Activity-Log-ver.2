@@ -18,7 +18,7 @@
 
   <link
     rel="stylesheet"
-    href="style.css?v=15"
+    href="style.css?v=16"
   >
 </head>
 
@@ -99,31 +99,52 @@
             id="moodButtons"
             class="mood-buttons"
           >
-            <button type="button" data-mood="-3">
+            <button
+              type="button"
+              data-mood="-3"
+            >
               −3
             </button>
 
-            <button type="button" data-mood="-2">
+            <button
+              type="button"
+              data-mood="-2"
+            >
               −2
             </button>
 
-            <button type="button" data-mood="-1">
+            <button
+              type="button"
+              data-mood="-1"
+            >
               −1
             </button>
 
-            <button type="button" data-mood="0">
+            <button
+              type="button"
+              data-mood="0"
+            >
               0
             </button>
 
-            <button type="button" data-mood="1">
+            <button
+              type="button"
+              data-mood="1"
+            >
               ＋1
             </button>
 
-            <button type="button" data-mood="2">
+            <button
+              type="button"
+              data-mood="2"
+            >
               ＋2
             </button>
 
-            <button type="button" data-mood="3">
+            <button
+              type="button"
+              data-mood="3"
+            >
               ＋3
             </button>
           </div>
@@ -224,33 +245,36 @@
         ></p>
       </div>
 
-      <!-- 活動内容検索 -->
-      <div class="activity-search">
-        <label for="activitySearchInput">
-          活動内容を検索
+      <!-- 表示日ごとのメモ -->
+      <div
+        id="dailyMemoCard"
+        class="daily-memo-card"
+      >
+        <label for="dailyMemo">
+          この日のメモ
         </label>
 
-        <div class="search-row">
-          <input
-            id="activitySearchInput"
-            type="search"
-            placeholder="例：散歩"
-          >
+        <textarea
+          id="dailyMemo"
+          rows="3"
+          maxlength="3000"
+          placeholder="表示日を選択すると、その日のメモを入力できます"
+          disabled
+        ></textarea>
+
+        <div class="daily-memo-actions">
+          <p
+            id="dailyMemoMessage"
+            aria-live="polite"
+          ></p>
 
           <button
-            id="activitySearchButton"
+            id="saveDailyMemoButton"
             class="primary-button"
             type="button"
+            disabled
           >
-            検索
-          </button>
-
-          <button
-            id="activitySearchResetButton"
-            class="secondary-button"
-            type="button"
-          >
-            解除
+            メモを保存
           </button>
         </div>
       </div>
@@ -350,6 +374,94 @@
             記録するとグラフが表示されます。
           </p>
         </div>
+      </div>
+    </section>
+
+    <!-- 検索画面 -->
+    <section
+      id="searchPage"
+      class="page"
+    >
+      <div class="section-heading">
+        <h2>
+          記録を検索
+        </h2>
+
+        <span
+          id="searchResultCount"
+          class="count-badge"
+        >
+          0件
+        </span>
+      </div>
+
+      <div class="search-filter-card">
+        <div class="search-period">
+          <div class="filter-date-field">
+            <label for="searchStartDate">
+              開始日
+            </label>
+
+            <input
+              id="searchStartDate"
+              type="date"
+            >
+          </div>
+
+          <div class="filter-date-field">
+            <label for="searchEndDate">
+              終了日
+            </label>
+
+            <input
+              id="searchEndDate"
+              type="date"
+            >
+          </div>
+        </div>
+
+        <label for="searchKeyword">
+          検索ワード
+        </label>
+
+        <input
+          id="searchKeyword"
+          type="search"
+          placeholder="例：散歩"
+        >
+
+        <div class="search-actions">
+          <button
+            id="searchButton"
+            class="primary-button"
+            type="button"
+          >
+            検索
+          </button>
+
+          <button
+            id="searchClearButton"
+            class="secondary-button"
+            type="button"
+          >
+            クリア
+          </button>
+        </div>
+
+        <p
+          id="searchMessage"
+          class="filter-message"
+          aria-live="polite"
+        ></p>
+      </div>
+
+      <div
+        id="searchResults"
+        class="search-results"
+      >
+        <p class="empty-message">
+          期間と検索ワードを入力してください。
+        </p>
       </div>
     </section>
 
@@ -457,9 +569,18 @@
       <span>📈</span>
       グラフ
     </button>
+
+    <button
+      type="button"
+      class="nav-button"
+      data-page="searchPage"
+    >
+      <span>🔍</span>
+      検索
+    </button>
   </nav>
 
-  <script src="script.js?v=15"></script>
+  <script src="script.js?v=16"></script>
 </body>
 
 </html>

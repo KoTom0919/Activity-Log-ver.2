@@ -10,11 +10,17 @@ const STORAGE_KEY =
 const ROUTINE_STORAGE_KEY =
   "routineActivities_v1";
 
+const DAILY_MEMO_STORAGE_KEY =
+  "dailyMemos_v1";
+
 let records =
   loadRecords();
 
 let routineActivities =
   loadRoutineActivities();
+
+let dailyMemos =
+  loadDailyMemos();
 
 let selectedMood = null;
 let editingId = null;
@@ -24,7 +30,6 @@ let timelineFilter = {
   end: ""
 };
 
-let activitySearchText = "";
 let routineSettingsOpen = false;
 
 let graphFilter = {
@@ -95,6 +100,16 @@ const routineEditList =
 const newRoutineInput =
   document.getElementById(
     "newRoutineInput"
+  );
+
+const dailyMemoInput =
+  document.getElementById(
+    "dailyMemo"
+  );
+
+const saveDailyMemoButton =
+  document.getElementById(
+    "saveDailyMemoButton"
   );
 
 /* =========================
@@ -355,38 +370,52 @@ window.addEventListener(
   clearPrintMode
 );
 
-/* 活動内容検索 */
+/* 日別メモ */
 
-document
-  .getElementById(
-    "activitySearchButton"
-  )
-  .addEventListener(
-    "click",
-    applyActivitySearch
-  );
+saveDailyMemoButton.addEventListener(
+  "click",
+  saveDailyMemo
+);
 
-document
-  .getElementById(
-    "activitySearchResetButton"
-  )
-  .addEventListener(
-    "click",
-    resetActivitySearch
-  );
+dailyMemoInput.addEventListener(
+  "input",
+  () => {
+    autoResizeTextarea(
+      dailyMemoInput
+    );
 
-document
-  .getElementById(
-    "activitySearchInput"
-  )
-  .addEventListener(
-    "keydown",
-    event => {
-      if (event.key === "Enter") {
-        applyActivitySearch();
-      }
+    document.getElementById(
+      "dailyMemoMessage"
+    ).textContent = "";
+  }
+);
+
+/* 検索 */
+
+document.getElementById(
+  "searchButton"
+).addEventListener(
+  "click",
+  runSearch
+);
+
+document.getElementById(
+  "searchClearButton"
+).addEventListener(
+  "click",
+  clearSearch
+);
+
+document.getElementById(
+  "searchKeyword"
+).addEventListener(
+  "keydown",
+  event => {
+    if (event.key === "Enter") {
+      runSearch();
     }
-  );
+  }
+);
 
 /* 気分ボタン */
 
@@ -669,7 +698,7 @@ function addRoutineActivity() {
     newRoutineInput.value.trim();
 
   if (!activity) {
-    newRoutineInput.focus();
+        newRoutineInput.focus();
     return;
   }
 
@@ -739,29 +768,276 @@ function deleteRoutineActivity(event) {
 }
 
 /* =========================
-   活動内容検索
+   日別メモ
 ========================= */
 
-function applyActivitySearch() {
-  activitySearchText =
-    document
-      .getElementById(
-        "activitySearchInput"
-      )
-      .value
-      .trim();
+function loadDailyMemos() {
+  try {
+    const savedData =
+      localStorage.getItem(
+        DAILY_MEMO_STORAGE_KEY
+      );
 
-  renderTimeline();
+    if (!savedData) {
+      return {};
+    }
+
+    const parsedData =
+      JSON.parse(savedData);
+
+    return (
+      parsedData &&
+      typeof parsedData === "object" &&
+      !Array.isArray(parsedData)
+    )
+      ? parsedData
+      : {};
+  } catch (error) {
+    console.error(
+      "メモの読み込みに失敗しました。",
+      error
+    );
+
+    return {};
+  }
 }
 
-function resetActivitySearch() {
+function persistDailyMemos() {
+  try {
+    localStorage.setItem(
+      DAILY_MEMO_STORAGE_KEY,
+      JSON.stringify(dailyMemos)
+    );
+
+    return true;
+  } catch (error) {
+    console.error(
+      "メモの保存に失敗しました。",
+      error
+    );
+
+    return false;
+  }
+}
+
+function loadDailyMemoForDate(
+  date
+) {
+  const enabled = Boolean(date);
+
+  dailyMemoInput.disabled =
+    !enabled;
+
+  saveDailyMemoButton.disabled =
+    !enabled;
+
+  dailyMemoInput.placeholder =
+    enabled
+      ? "体調、予定、その日の振り返りなど"
+      : "表示日を選択すると、その日のメモを入力できます";
+
+  dailyMemoInput.value =
+    enabled
+      ? dailyMemos[date] || ""
+      : "";
+
   document.getElementById(
-    "activitySearchInput"
+    "dailyMemoMessage"
+  ).textContent = "";
+
+  autoResizeTextarea(
+    dailyMemoInput
+  );
+}
+
+function saveDailyMemo() {
+  const date =
+    document.getElementById(
+      "timelineDisplayDate"
+    ).value;
+
+  if (!date) {
+    return;
+  }
+
+  const memo =
+    dailyMemoInput.value.trim();
+
+  if (memo) {
+    dailyMemos[date] = memo;
+  } else {
+    delete dailyMemos[date];
+  }
+
+  const saved =
+    persistDailyMemos();
+
+  document.getElementById(
+    "dailyMemoMessage"
+  ).textContent = saved
+    ? "保存しました。"
+    : "保存できませんでした。";
+}
+
+function autoResizeTextarea(
+  textarea
+) {
+  textarea.style.height = "auto";
+
+  textarea.style.height =
+    `${Math.max(
+      textarea.scrollHeight,
+      88
+    )}px`;
+}
+
+/* =========================
+   記録検索
+========================= */
+
+function runSearch() {
+  const start =
+    document.getElementById(
+      "searchStartDate"
+    ).value;
+
+  const end =
+    document.getElementById(
+      "searchEndDate"
+    ).value;
+
+  const keyword =
+    document.getElementById(
+      "searchKeyword"
+    ).value.trim();
+
+  const searchMessage =
+    document.getElementById(
+      "searchMessage"
+    );
+
+  if (!start || !end) {
+    searchMessage.textContent =
+      "開始日と終了日を選択してください。";
+
+    return;
+  }
+
+  if (start > end) {
+    searchMessage.textContent =
+      "開始日は終了日以前にしてください。";
+
+    return;
+  }
+
+  if (!keyword) {
+    searchMessage.textContent =
+      "検索ワードを入力してください。";
+
+    return;
+  }
+
+  searchMessage.textContent = "";
+
+  const normalizedKeyword =
+    keyword.toLocaleLowerCase(
+      "ja-JP"
+    );
+
+  const items =
+    sortedRecords().filter(record => {
+      return (
+        record.date >= start &&
+        record.date <= end &&
+        record.activity
+          .toLocaleLowerCase(
+            "ja-JP"
+          )
+          .includes(
+            normalizedKeyword
+          )
+      );
+    });
+
+  renderSearchResults(items);
+}
+
+function renderSearchResults(items) {
+  const results =
+    document.getElementById(
+      "searchResults"
+    );
+
+  document.getElementById(
+    "searchResultCount"
+  ).textContent = `${items.length}件`;
+
+  if (items.length === 0) {
+    results.innerHTML = `
+      <p class="empty-message">
+        条件に一致する記録がありません。
+      </p>
+    `;
+
+    return;
+  }
+
+  results.innerHTML =
+    items.map(record => {
+      return `
+        <article class="search-result-item">
+          <div class="record-head">
+            <time class="record-date">
+              ${formatDate(record.date)}
+              ${record.time}
+            </time>
+
+            <span
+              class="mood-badge"
+              style="background:${moodColor(
+                record.mood
+              )}"
+            >
+              気分 ${formatMood(record.mood)}
+            </span>
+          </div>
+
+          <p class="activity-text">${
+            escapeHtml(record.activity)
+          }</p>
+        </article>
+      `;
+    }).join("");
+}
+
+function clearSearch() {
+  document.getElementById(
+    "searchStartDate"
   ).value = "";
 
-  activitySearchText = "";
+  document.getElementById(
+    "searchEndDate"
+  ).value = "";
 
-  renderTimeline();
+  document.getElementById(
+    "searchKeyword"
+  ).value = "";
+
+  document.getElementById(
+    "searchMessage"
+  ).textContent = "";
+
+  document.getElementById(
+    "searchResultCount"
+  ).textContent = "0件";
+
+  document.getElementById(
+    "searchResults"
+  ).innerHTML = `
+    <p class="empty-message">
+      期間と検索ワードを入力してください。
+    </p>
+  `;
 }
 
 /* =========================
@@ -1086,6 +1362,10 @@ function applyTimelineFilter() {
     end: displayDate
   };
 
+  loadDailyMemoForDate(
+    displayDate
+  );
+
   renderTimeline();
 }
 
@@ -1102,6 +1382,8 @@ function resetTimelineFilter() {
     start: "",
     end: ""
   };
+
+  loadDailyMemoForDate("");
 
   renderTimeline();
 }
@@ -1153,28 +1435,9 @@ function resetGraphFilter() {
 ========================= */
 
 function getTimelineItems() {
-  const searchWord =
-    activitySearchText
-      .toLocaleLowerCase(
-        "ja-JP"
-      );
-
   return filteredRecords(
     timelineFilter
-  ).filter(record => {
-    const activityText =
-      record.activity
-        .toLocaleLowerCase(
-          "ja-JP"
-        );
-
-    return (
-      !searchWord ||
-      activityText.includes(
-        searchWord
-      )
-    );
-  });
+  );
 }
 
 function renderTimeline() {
@@ -1451,6 +1714,9 @@ function buildTimelinePrintPages() {
   const items =
     getTimelineItems();
 
+  const memoHtml =
+    renderPrintableMemos(items);
+
   if (items.length === 0) {
     printArea.innerHTML = `
       <section class="timeline-print-page">
@@ -1463,6 +1729,8 @@ function buildTimelinePrintPages() {
         <p class="timeline-print-empty">
           条件に一致する記録がありません。
         </p>
+
+        ${memoHtml}
 
       </section>
     `;
@@ -1478,8 +1746,7 @@ function buildTimelinePrintPages() {
 
   const dateGroups = [];
 
-  items.forEach(record => {
-    let group =
+  items.forEach(record => {    let group =
       dateGroups.find(item => {
         return item.date === record.date;
       });
@@ -1653,10 +1920,65 @@ function buildTimelinePrintPages() {
 
             </div>
 
+            ${
+              pageIndex === pages.length - 1
+                ? memoHtml
+                : ""
+            }
+
           </section>
         `;
       })
       .join("");
+}
+
+function renderPrintableMemos(items) {
+  const selectedDate =
+    document.getElementById(
+      "timelineDisplayDate"
+    ).value;
+
+  const dates = selectedDate
+    ? [selectedDate]
+    : [
+        ...new Set(
+          items.map(record => {
+            return record.date;
+          })
+        )
+      ];
+
+  const memos = dates
+    .filter(date => {
+      return Boolean(
+        dailyMemos[date]
+      );
+    })
+    .map(date => {
+      return {
+        date: date,
+        text: dailyMemos[date]
+      };
+    });
+
+  if (memos.length === 0) {
+    return "";
+  }
+
+  return `
+    <section class="timeline-print-memos">
+      <h2>メモ</h2>
+
+      ${memos.map(memo => {
+        return `
+          <div class="timeline-print-memo">
+            <h3>${formatDate(memo.date)}</h3>
+            <p>${escapeHtml(memo.text)}</p>
+          </div>
+        `;
+      }).join("")}
+    </section>
+  `;
 }
 
 /* =========================
@@ -1753,7 +2075,7 @@ function drawGraph() {
 
   emptyMessage.textContent =
     records.length > 0
-      ? "指定した日の記録がありません。"
+      ? "指定した期間の記録がありません。"
       : "記録するとグラフが表示されます。";
 
   if (items.length === 0) {
