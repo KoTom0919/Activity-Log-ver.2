@@ -18,7 +18,7 @@
 
   <link
     rel="stylesheet"
-    href="style.css?v=19"
+    href="style.css?v=20"
   >
 </head>
 
@@ -181,6 +181,65 @@
       </div>
     </section>
 
+    <!-- 予定入力画面 -->
+    <section id="planPage" class="page">
+      <div class="card form-card">
+        <h2>予定を登録</h2>
+
+        <label for="planActivity">何をするか</label>
+        <textarea
+          id="planActivity"
+          rows="3"
+          maxlength="300"
+          placeholder="例：散歩をする"
+        ></textarea>
+
+        <label for="planDate">開始日・予定日</label>
+        <input id="planDate" type="date">
+
+        <label for="planTime">時刻</label>
+        <input id="planTime" type="time">
+
+        <label for="planRepeat">繰り返し</label>
+        <select id="planRepeat">
+          <option value="once">その日限り</option>
+          <option value="daily">毎日</option>
+          <option value="weekly">毎週</option>
+        </select>
+
+        <p class="mood-guide">
+          毎週は開始日と同じ曜日に表示します。
+        </p>
+
+        <p
+          id="planMessage"
+          class="message"
+          aria-live="polite"
+        ></p>
+
+        <div class="form-actions">
+          <button
+            id="cancelPlanButton"
+            class="secondary-button hidden"
+            type="button"
+          >
+            編集をキャンセル
+          </button>
+
+          <button
+            id="savePlanButton"
+            class="primary-button"
+            type="button"
+          >
+            予定を登録
+          </button>
+        </div>
+
+        <h3>登録した予定</h3>
+        <div id="planList"></div>
+      </div>
+    </section>
+
     <!-- 時系列画面 -->
     <section
       id="timelinePage"
@@ -273,6 +332,59 @@
         id="timeline"
         class="timeline"
       ></div>
+
+      <!-- 予定完了時の入力欄 -->
+      <div id="completePanel" class="card hidden">
+        <h3>予定を完了</h3>
+        <p id="completeDateLabel"></p>
+
+        <label for="completeActivity">
+          活動内容
+        </label>
+        <textarea
+          id="completeActivity"
+          rows="3"
+          maxlength="300"
+        ></textarea>
+
+        <label for="completeMood">
+          気分
+        </label>
+        <select id="completeMood">
+          <option value="">選択してください</option>
+          <option value="-3">−3</option>
+          <option value="-2">−2</option>
+          <option value="-1">−1</option>
+          <option value="0">0</option>
+          <option value="1">＋1</option>
+          <option value="2">＋2</option>
+          <option value="3">＋3</option>
+        </select>
+
+        <p
+          id="completeMessage"
+          class="message"
+          aria-live="polite"
+        ></p>
+
+        <div class="form-actions">
+          <button
+            id="cancelCompleteButton"
+            class="secondary-button"
+            type="button"
+          >
+            キャンセル
+          </button>
+
+          <button
+            id="finishPlanButton"
+            class="primary-button"
+            type="button"
+          >
+            完了
+          </button>
+        </div>
+      </div>
 
       <!-- 印刷専用表示 -->
       <div
@@ -568,6 +680,15 @@
     <button
       type="button"
       class="nav-button"
+      data-page="planPage"
+    >
+      <span>📅</span>
+      予定
+    </button>
+
+    <button
+      type="button"
+      class="nav-button"
       data-page="timelinePage"
     >
       <span>🕒</span>
@@ -597,7 +718,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <!-- アプリ本体 -->
-  <script src="script.js?v=20"></script>
+  <script src="script.js?v=21"></script>
 </body>
 
 </html>

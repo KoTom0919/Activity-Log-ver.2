@@ -3,13 +3,17 @@
 const STORAGE_KEY = "activityRecords_v1";
 const ROUTINE_STORAGE_KEY = "routineActivities_v1";
 const DAILY_MEMO_STORAGE_KEY = "dailyMemos_v1";
+const PLAN_STORAGE_KEY = "activityPlans_v1";
 
 let records = loadJson(STORAGE_KEY, []);
 let routineActivities = loadJson(ROUTINE_STORAGE_KEY, []);
 let dailyMemos = loadJson(DAILY_MEMO_STORAGE_KEY, {});
+let plans = loadJson(PLAN_STORAGE_KEY, []);
 
 let selectedMood = null;
 let editingId = null;
+let editingPlanId = null;
+let completingPlan = null;
 let moodChart = null;
 let routineSettingsOpen = false;
 
@@ -56,6 +60,18 @@ const routineEditList =
 
 const newRoutineInput =
   document.getElementById("newRoutineInput");
+
+const planActivity =
+  document.getElementById("planActivity");
+
+const planDate =
+  document.getElementById("planDate");
+
+const planTime =
+  document.getElementById("planTime");
+
+const planRepeat =
+  document.getElementById("planRepeat");
 
 /* =========================
    記録入力
@@ -125,38 +141,36 @@ function saveRecord() {
     activityInput.value.trim();
 
   if (!date) {
-    showFormMessage(
-      "日付を入力してください。"
-    );
+    showFormMessage("日付を入力してください。");
     return;
   }
 
   if (!time) {
-    showFormMessage(
-      "時刻を入力してください。"
-    );
+    showFormMessage("時刻を入力してください。");
     return;
   }
 
   if (!activity) {
-    showFormMessage(
-      "活動内容を入力してください。"
-    );
+    showFormMessage("活動内容を入力してください。");
     return;
   }
 
   if (selectedMood === null) {
-    showFormMessage(
-      "気分を選択してください。"
-    );
+    showFormMessage("気分を選択してください。");
     return;
   }
 
-  const wasEditing =
-    editingId !== null;
+  const wasEditing = editingId !== null;
+
+  const existingRecord = wasEditing
+    ? records.find(item => item.id === editingId)
+    : null;
 
   const record = {
     id: editingId || createRecordId(),
+    ...(existingRecord?.planId
+      ? { planId: existingRecord.planId }
+      : {}),
     date,
     time,
     activity,
@@ -337,10 +351,13 @@ function renderTimeline() {
     document.getElementById("timeline");
 
   const items = getTimelineRecords();
+  const pending =
+    pendingPlans(timelineDateInput.value);
 
   document.getElementById(
     "recordCount"
-  ).textContent = `${items.length}件`;
+  ).textContent =
+    `${items.length + pending.length}件`;
 
   document
     .getElementById("clearAllButton")
@@ -349,7 +366,10 @@ function renderTimeline() {
       records.length === 0
     );
 
-  if (items.length === 0) {
+  if (
+    items.length === 0 &&
+    pending.length === 0
+  ) {
     timeline.innerHTML = `
       <p class="empty-message">
         この日の記録はありません。
@@ -358,7 +378,7 @@ function renderTimeline() {
     return;
   }
 
-  timeline.innerHTML = items
+  const completedHtml = items
     .map(record => {
       return `
         <article class="timeline-item">
@@ -410,7 +430,473 @@ function renderTimeline() {
       `;
     })
     .join("");
+
+  const pendingHtml = pending
+    .map(({ plan, date }) => {
+      return `
+        <article class="timeline-item pending-plan">
+          <div class="record-head">
+            <time class="record-date">
+              ${formatDate(date)}
+              ${escapeHtml(plan.time)}
+            </time>
+
+            <span class="plan-badge">
+              予定
+            </span>
+          </div>
+
+          <p class="activity-text">
+            ${escapeHtml(plan.activity)}
+          </p>
+
+          <div class="record-actions">
+            <button
+              type="button"
+              data-plan-complete="${escapeHtml(plan.id)}"
+              data-date="${date}"
+            >
+              編集・完了
+            </button>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+
+  timeline.innerHTML =
+    completedHtml + pendingHtml;
+
+  timeline
+    .querySelectorAll("[data-plan-complete]")
+    .forEach(button => {
+      button.addEventListener(
+        "click",
+        () => {
+          completePlan(
+            button.dataset.planComplete,
+            button.dataset.date
+          );
+        }
+      );
+    });
 }
+
+/* =========================
+   予定
+========================= */
+
+function planOccurs(plan, date) {
+  if (date < plan.date) {
+    return false;
+  }
+
+  if (plan.repeat === "once") {
+    return date === plan.date;
+  }
+
+  if (plan.repeat === "daily") {
+    return true;
+  }
+
+  const start =
+    new Date(`${plan.date}T12:00:00`);
+
+  const target =
+    new Date(`${date}T12:00:00`);
+
+  return start.getDay() ===
+    target.getDay();
+}
+
+function pendingPlans(selectedDate) {
+  const dates = [];
+
+  if (selectedDate) {
+    dates.push(selectedDate);
+  } else {
+    const today = new Date();
+
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate() + i
+      );
+
+      dates.push(formatInputDate(day));
+    }
+  }
+
+  return dates
+    .flatMap(date => {
+      return plans
+        .filter(plan => {
+          const alreadyCompleted =
+            records.some(record => {
+              return (
+                record.planId === plan.id &&
+                record.date === date
+              );
+            });
+
+          return (
+            planOccurs(plan, date) &&
+            !alreadyCompleted
+          );
+        })
+        .map(plan => ({ plan, date }));
+    })
+    .sort((a, b) => {
+      const first =
+        `${a.date}${a.plan.time}`;
+
+      const second =
+        `${b.date}${b.plan.time}`;
+
+      return first.localeCompare(second);
+    });
+}
+
+function resetPlanForm() {
+  editingPlanId = null;
+  planActivity.value = "";
+  planDate.value =
+    formatInputDate(new Date());
+  planTime.value = "";
+  planRepeat.value = "once";
+
+  document.getElementById(
+    "savePlanButton"
+  ).textContent = "予定を登録";
+
+  document.getElementById(
+    "cancelPlanButton"
+  ).classList.add("hidden");
+}
+
+function renderPlanList() {
+  const list =
+    document.getElementById("planList");
+
+  const repeatLabels = {
+    once: "その日限り",
+    daily: "毎日",
+    weekly: "毎週"
+  };
+
+  if (plans.length === 0) {
+    list.innerHTML = `
+      <p class="empty-message">
+        予定はありません。
+      </p>
+    `;
+  } else {
+    list.innerHTML = plans
+      .map(plan => {
+        return `
+          <article class="plan-list-item">
+            <strong>
+              ${escapeHtml(plan.activity)}
+            </strong>
+
+            <p>
+              ${formatDate(plan.date)}
+              ${escapeHtml(plan.time)}
+              · ${repeatLabels[plan.repeat] || ""}
+            </p>
+
+            <div class="record-actions">
+              <button
+                type="button"
+                data-edit-plan="${escapeHtml(plan.id)}"
+              >
+                編集
+              </button>
+
+              <button
+                type="button"
+                class="delete-button"
+                data-delete-plan="${escapeHtml(plan.id)}"
+              >
+                削除
+              </button>
+            </div>
+          </article>
+        `;
+      })
+      .join("");
+  }
+
+  list
+    .querySelectorAll("[data-edit-plan]")
+    .forEach(button => {
+      button.addEventListener(
+        "click",
+        () => {
+          const plan = plans.find(item => {
+            return item.id ===
+              button.dataset.editPlan;
+          });
+
+          if (!plan) {
+            return;
+          }
+
+          editingPlanId = plan.id;
+          planActivity.value =
+            plan.activity;
+          planDate.value = plan.date;
+          planTime.value = plan.time;
+          planRepeat.value =
+            plan.repeat;
+
+          document.getElementById(
+            "savePlanButton"
+          ).textContent = "予定を更新";
+
+          document.getElementById(
+            "cancelPlanButton"
+          ).classList.remove("hidden");
+
+          planActivity.focus();
+        }
+      );
+    });
+
+  list
+    .querySelectorAll("[data-delete-plan]")
+    .forEach(button => {
+      button.addEventListener(
+        "click",
+        () => {
+          const confirmed =
+            window.confirm(
+              "この予定を削除しますか？完了済みの記録は残ります。"
+            );
+
+          if (!confirmed) {
+            return;
+          }
+
+          plans = plans.filter(item => {
+            return item.id !==
+              button.dataset.deletePlan;
+          });
+
+          saveJson(
+            PLAN_STORAGE_KEY,
+            plans
+          );
+
+          resetPlanForm();
+          renderPlanList();
+          renderTimeline();
+        }
+      );
+    });
+}
+
+document
+  .getElementById("savePlanButton")
+  .addEventListener("click", () => {
+    const activity =
+      planActivity.value.trim();
+
+    const message =
+      document.getElementById(
+        "planMessage"
+      );
+
+    if (
+      !activity ||
+      !planDate.value ||
+      !planTime.value
+    ) {
+      message.textContent =
+        "内容・日付・時刻を入力してください。";
+      return;
+    }
+
+    const plan = {
+      id:
+        editingPlanId ||
+        createRecordId(),
+      activity,
+      date: planDate.value,
+      time: planTime.value,
+      repeat: planRepeat.value
+    };
+
+    if (editingPlanId) {
+      plans = plans.map(item => {
+        return item.id === editingPlanId
+          ? plan
+          : item;
+      });
+    } else {
+      plans.push(plan);
+    }
+
+    const saved = saveJson(
+      PLAN_STORAGE_KEY,
+      plans
+    );
+
+    if (!saved) {
+      message.textContent =
+        "保存できませんでした。";
+      return;
+    }
+
+    resetPlanForm();
+    renderPlanList();
+    renderTimeline();
+
+    message.textContent =
+      "予定を保存しました。";
+  });
+
+document
+  .getElementById("cancelPlanButton")
+  .addEventListener(
+    "click",
+    resetPlanForm
+  );
+
+function completePlan(id, date) {
+  const plan =
+    plans.find(item => item.id === id);
+
+  if (!plan) {
+    return;
+  }
+
+  completingPlan = {
+    plan,
+    date
+  };
+
+  document.getElementById(
+    "completeDateLabel"
+  ).textContent =
+    `${formatDate(date)} ${plan.time}`;
+
+  document.getElementById(
+    "completeActivity"
+  ).value = plan.activity;
+
+  document.getElementById(
+    "completeMood"
+  ).value = "";
+
+  document.getElementById(
+    "completeMessage"
+  ).textContent = "";
+
+  const panel =
+    document.getElementById(
+      "completePanel"
+    );
+
+  panel.classList.remove("hidden");
+
+  panel.scrollIntoView({
+    behavior: "smooth",
+    block: "center"
+  });
+}
+
+document
+  .getElementById(
+    "cancelCompleteButton"
+  )
+  .addEventListener("click", () => {
+    completingPlan = null;
+
+    document.getElementById(
+      "completePanel"
+    ).classList.add("hidden");
+  });
+
+document
+  .getElementById(
+    "finishPlanButton"
+  )
+  .addEventListener("click", () => {
+    if (!completingPlan) {
+      return;
+    }
+
+    const activity =
+      document.getElementById(
+        "completeActivity"
+      ).value.trim();
+
+    const mood =
+      document.getElementById(
+        "completeMood"
+      ).value;
+
+    if (
+      !activity ||
+      mood === ""
+    ) {
+      document.getElementById(
+        "completeMessage"
+      ).textContent =
+        "活動内容と気分を入力してください。";
+      return;
+    }
+
+    const { plan, date } =
+      completingPlan;
+
+    const alreadyCompleted =
+      records.some(record => {
+        return (
+          record.planId === plan.id &&
+          record.date === date
+        );
+      });
+
+    if (alreadyCompleted) {
+      return;
+    }
+
+    const record = {
+      id: createRecordId(),
+      planId: plan.id,
+      date,
+      time: plan.time,
+      activity,
+      mood: Number(mood)
+    };
+
+    records.push(record);
+
+    const saved = saveJson(
+      STORAGE_KEY,
+      records
+    );
+
+    if (!saved) {
+      records.pop();
+      return;
+    }
+
+    completingPlan = null;
+
+    document.getElementById(
+      "completePanel"
+    ).classList.add("hidden");
+
+    renderTimeline();
+    drawGraph();
+  });
+
+resetPlanForm();
+renderPlanList();
 
 /* =========================
    日別メモ
@@ -561,12 +1047,14 @@ function drawGraph() {
 
   if (typeof Chart === "undefined") {
     canvas.classList.add("hidden");
+
     emptyMessage.classList.remove(
       "hidden"
     );
 
     emptyMessage.textContent =
       "グラフを読み込めませんでした。";
+
     return;
   }
 
@@ -763,7 +1251,8 @@ function renderSearchResults(items) {
 
   document.getElementById(
     "searchResultCount"
-  ).textContent = `${items.length}件`;
+  ).textContent =
+    `${items.length}件`;
 
   if (items.length === 0) {
     resultsArea.innerHTML = `
@@ -1072,9 +1561,10 @@ function renderRoutineActivities() {
 
   document.getElementById(
     "toggleRoutineSettingsButton"
-  ).textContent = routineSettingsOpen
-    ? "設定を閉じる"
-    : "設定";
+  ).textContent =
+    routineSettingsOpen
+      ? "設定を閉じる"
+      : "設定";
 
   routineEditList.innerHTML =
     routineActivities
@@ -1458,7 +1948,8 @@ function moodColor(mood) {
     "#238d59"
   ];
 
-  return colors[mood + 3] || "#809087";
+  return colors[mood + 3] ||
+    "#809087";
 }
 
 function createRecordId() {
