@@ -1,25 +1,11 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
   <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
-
-  <meta
-    name="theme-color"
-    content="#58a98a"
-  >
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#58a98a">
   <title>活動記録表</title>
-
-  <link
-    rel="stylesheet"
-    href="style.css?v=21"
-  >
+  <link rel="stylesheet" href="style.css?v=22">
 </head>
 
 <body>
@@ -28,28 +14,15 @@
   </header>
 
   <main>
-
     <!-- 記録入力画面 -->
-    <section
-      id="inputPage"
-      class="page active"
-    >
+    <section id="inputPage" class="page active">
       <div class="card form-card">
         <h2>活動を記録</h2>
 
-        <label for="recordDate">
-          日付
-        </label>
+        <label for="recordDate">日付</label>
+        <input id="recordDate" type="date">
 
-        <input
-          id="recordDate"
-          type="date"
-        >
-
-        <label for="recordTime">
-          時刻
-        </label>
-
+        <label for="recordTime">時刻</label>
         <div class="time-row">
           <input
             id="recordTime"
@@ -60,21 +33,13 @@
             placeholder="例：800"
             autocomplete="off"
           >
-
-          <button
-            id="nowButton"
-            class="sub-button"
-            type="button"
-          >
+          <button id="nowButton" class="sub-button" type="button">
             現在時刻
           </button>
         </div>
 
         <div class="activity-label-row">
-          <label for="activity">
-            活動内容
-          </label>
-
+          <label for="activity">活動内容</label>
           <button
             id="openRoutineButton"
             class="routine-open-button"
@@ -93,73 +58,21 @@
 
         <fieldset>
           <legend>気分</legend>
-
-          <div
-            id="moodButtons"
-            class="mood-buttons"
-          >
-            <button
-              type="button"
-              data-mood="-3"
-            >
-              −3
-            </button>
-
-            <button
-              type="button"
-              data-mood="-2"
-            >
-              −2
-            </button>
-
-            <button
-              type="button"
-              data-mood="-1"
-            >
-              −1
-            </button>
-
-            <button
-              type="button"
-              data-mood="0"
-            >
-              0
-            </button>
-
-            <button
-              type="button"
-              data-mood="1"
-            >
-              ＋1
-            </button>
-
-            <button
-              type="button"
-              data-mood="2"
-            >
-              ＋2
-            </button>
-
-            <button
-              type="button"
-              data-mood="3"
-            >
-              ＋3
-            </button>
+          <div id="moodButtons" class="mood-buttons">
+            <button type="button" data-mood="-3">−3</button>
+            <button type="button" data-mood="-2">−2</button>
+            <button type="button" data-mood="-1">−1</button>
+            <button type="button" data-mood="0">0</button>
+            <button type="button" data-mood="1">＋1</button>
+            <button type="button" data-mood="2">＋2</button>
+            <button type="button" data-mood="3">＋3</button>
           </div>
-
           <p class="mood-guide">
-            −3：とても悪い　
-            0：普通　
-            ＋3：とても良い
+            −3：とても悪い　0：普通　＋3：とても良い
           </p>
         </fieldset>
 
-        <p
-          id="formMessage"
-          class="message"
-          aria-live="polite"
-        ></p>
+        <p id="formMessage" class="message" aria-live="polite"></p>
 
         <div class="form-actions">
           <button
@@ -169,12 +82,7 @@
           >
             編集をキャンセル
           </button>
-
-          <button
-            id="saveButton"
-            class="primary-button"
-            type="button"
-          >
+          <button id="saveButton" class="primary-button" type="button">
             記録する
           </button>
         </div>
@@ -186,9 +94,7 @@
       <div class="card form-card">
         <h2>予定を登録</h2>
 
-        <label for="planActivity">
-          予定
-        </label>
+        <label for="planActivity">何をするか</label>
         <textarea
           id="planActivity"
           rows="3"
@@ -196,46 +102,31 @@
           placeholder="例：散歩をする"
         ></textarea>
 
-        <label for="planDate">
-          開始日・予定日
-        </label>
-        <input
-          id="planDate"
-          type="date"
-        >
+        <label for="planDate">開始日・予定日</label>
+        <input id="planDate" type="date">
 
-        <label for="planTime">
-          時刻
-        </label>
+        <label for="planTime">時刻</label>
         <input
           id="planTime"
-          type="time"
+          type="text"
+          inputmode="numeric"
+          pattern="[0-9:]*"
+          maxlength="5"
+          placeholder="例：800"
+          autocomplete="off"
         >
 
-        <label for="planRepeat">
-          繰り返し
-        </label>
+        <label for="planRepeat">繰り返し</label>
         <select id="planRepeat">
-          <option value="once">
-            その日限り
-          </option>
-          <option value="daily">
-            毎日
-          </option>
-          <option value="weekly">
-            毎週
-          </option>
+          <option value="once">その日限り</option>
+          <option value="daily">毎日</option>
+          <option value="weekly">毎週</option>
         </select>
 
         <p class="mood-guide">
           毎週は開始日と同じ曜日に表示します。
         </p>
-
-        <p
-          id="planMessage"
-          class="message"
-          aria-live="polite"
-        ></p>
+        <p id="planMessage" class="message" aria-live="polite"></p>
 
         <div class="form-actions">
           <button
@@ -245,7 +136,6 @@
           >
             編集をキャンセル
           </button>
-
           <button
             id="savePlanButton"
             class="primary-button"
@@ -255,37 +145,22 @@
           </button>
         </div>
 
-        <h3>登録した予定</h3>
+        <h3>未完了の予定</h3>
         <div id="planList"></div>
       </div>
     </section>
 
     <!-- 時系列画面 -->
-    <section
-      id="timelinePage"
-      class="page"
-    >
+    <section id="timelinePage" class="page">
       <div class="section-heading">
         <h2>時系列で見る</h2>
-
-        <span
-          id="recordCount"
-          class="count-badge"
-        >
-          0件
-        </span>
+        <span id="recordCount" class="count-badge">0件</span>
       </div>
 
       <div class="date-filter">
         <div class="filter-date-field">
-          <label for="timelineDisplayDate">
-            表示日
-          </label>
-
-          <input
-            id="timelineDisplayDate"
-            type="date"
-          >
+          <label for="timelineDisplayDate">表示日</label>
+          <input id="timelineDisplayDate" type="date">
         </div>
 
         <div class="filter-actions">
@@ -296,7 +171,6 @@
           >
             全て表示
           </button>
-
           <button
             id="timelinePrintButton"
             class="print-button"
@@ -314,14 +188,8 @@
       </div>
 
       <!-- 表示日ごとのメモ -->
-      <div
-        id="dailyMemoCard"
-        class="daily-memo-card"
-      >
-        <label for="dailyMemo">
-          この日のメモ
-        </label>
-
+      <div id="dailyMemoCard" class="daily-memo-card">
+        <label for="dailyMemo">この日のメモ</label>
         <textarea
           id="dailyMemo"
           rows="3"
@@ -331,11 +199,7 @@
         ></textarea>
 
         <div class="daily-memo-actions">
-          <p
-            id="dailyMemoMessage"
-            aria-live="polite"
-          ></p>
-
+          <p id="dailyMemoMessage" aria-live="polite"></p>
           <button
             id="saveDailyMemoButton"
             class="primary-button"
@@ -347,36 +211,23 @@
         </div>
       </div>
 
-      <!-- 通常画面の時系列表示 -->
-      <div
-        id="timeline"
-        class="timeline"
-      ></div>
+      <div id="timeline" class="timeline"></div>
 
       <!-- 予定完了時の入力欄 -->
-      <div
-        id="completePanel"
-        class="card hidden"
-      >
+      <div id="completePanel" class="card hidden">
         <h3>予定を完了</h3>
         <p id="completeDateLabel"></p>
 
-        <label for="completeActivity">
-          活動内容
-        </label>
+        <label for="completeActivity">活動内容</label>
         <textarea
           id="completeActivity"
           rows="3"
           maxlength="300"
         ></textarea>
 
-        <label for="completeMood">
-          気分
-        </label>
+        <label for="completeMood">気分</label>
         <select id="completeMood">
-          <option value="">
-            選択してください
-          </option>
+          <option value="">選択してください</option>
           <option value="-3">−3</option>
           <option value="-2">−2</option>
           <option value="-1">−1</option>
@@ -400,7 +251,6 @@
           >
             キャンセル
           </button>
-
           <button
             id="finishPlanButton"
             class="primary-button"
@@ -411,7 +261,6 @@
         </div>
       </div>
 
-      <!-- 印刷専用表示 -->
       <div
         id="timelinePrintPages"
         class="timeline-print-pages"
@@ -428,28 +277,17 @@
     </section>
 
     <!-- グラフ画面 -->
-    <section
-      id="graphPage"
-      class="page"
-    >
+    <section id="graphPage" class="page">
       <div class="card graph-card">
         <h2>気分の推移</h2>
-
         <p class="graph-note">
-          横軸：時刻　
-          縦軸：気分（−3〜＋3）
+          横軸：時刻　縦軸：気分（−3〜＋3）
         </p>
 
         <div class="date-filter">
           <div class="filter-date-field">
-            <label for="graphDisplayDate">
-              表示日
-            </label>
-
-            <input
-              id="graphDisplayDate"
-              type="date"
-            >
+            <label for="graphDisplayDate">表示日</label>
+            <input id="graphDisplayDate" type="date">
           </div>
 
           <div class="filter-actions">
@@ -460,7 +298,6 @@
             >
               全て表示
             </button>
-
             <button
               id="graphPrintButton"
               class="print-button"
@@ -482,11 +319,7 @@
             id="moodChart"
             aria-label="時刻ごとの気分グラフ"
           ></canvas>
-
-          <p
-            id="graphEmpty"
-            class="empty-message"
-          >
+          <p id="graphEmpty" class="empty-message">
             記録するとグラフが表示されます。
           </p>
         </div>
@@ -494,60 +327,32 @@
     </section>
 
     <!-- 検索画面 -->
-    <section
-      id="searchPage"
-      class="page"
-    >
+    <section id="searchPage" class="page">
       <div class="section-heading">
         <h2>記録を検索</h2>
-
-        <span
-          id="searchResultCount"
-          class="count-badge"
-        >
-          0件
-        </span>
+        <span id="searchResultCount" class="count-badge">0件</span>
       </div>
 
       <div class="search-filter-card">
         <div class="search-period">
           <div class="filter-date-field">
-            <label for="searchStartDate">
-              開始日
-            </label>
-
-            <input
-              id="searchStartDate"
-              type="date"
-            >
+            <label for="searchStartDate">開始日</label>
+            <input id="searchStartDate" type="date">
           </div>
-
           <div class="filter-date-field">
-            <label for="searchEndDate">
-              終了日
-            </label>
-
-            <input
-              id="searchEndDate"
-              type="date"
-            >
+            <label for="searchEndDate">終了日</label>
+            <input id="searchEndDate" type="date">
           </div>
         </div>
 
-        <label for="searchKeyword">
-          検索ワード
-        </label>
-
+        <label for="searchKeyword">検索ワード</label>
         <input
           id="searchKeyword"
           type="search"
           placeholder="例：散歩"
         >
 
-        <label for="searchMood">
-          気分
-        </label>
-
+        <label for="searchMood">気分</label>
         <select id="searchMood">
           <option value="">指定なし</option>
           <option value="-3">−3</option>
@@ -567,7 +372,6 @@
           >
             検索
           </button>
-
           <button
             id="searchClearButton"
             class="secondary-button"
@@ -584,10 +388,7 @@
         ></p>
       </div>
 
-      <div
-        id="searchResults"
-        class="search-results"
-      >
+      <div id="searchResults" class="search-results">
         <p class="empty-message">
           期間と検索条件を入力してください。
         </p>
@@ -605,10 +406,7 @@
     >
       <div class="routine-modal">
         <div class="routine-modal-header">
-          <h2 id="routineModalTitle">
-            定期的な活動
-          </h2>
-
+          <h2 id="routineModalTitle">定期的な活動</h2>
           <button
             id="closeRoutineButton"
             class="modal-close-button"
@@ -623,10 +421,7 @@
           活動を押すと「活動内容」に入力されます。
         </p>
 
-        <div
-          id="routineList"
-          class="routine-list"
-        ></div>
+        <div id="routineList" class="routine-list"></div>
 
         <button
           id="toggleRoutineSettingsButton"
@@ -636,10 +431,7 @@
           設定
         </button>
 
-        <div
-          id="routineSettings"
-          class="routine-settings hidden"
-        >
+        <div id="routineSettings" class="routine-settings hidden">
           <h3>よくする活動を編集</h3>
 
           <div class="routine-add-row">
@@ -649,7 +441,6 @@
               maxlength="100"
               placeholder="例：散歩を30分した"
             >
-
             <button
               id="addRoutineButton"
               class="primary-button"
@@ -716,11 +507,7 @@
     </button>
   </nav>
 
-  <!-- グラフ用 -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <!-- アプリ本体 -->
-  <script src="script.js?v=21"></script>
+  <script src="script.js?v=22"></script>
 </body>
-
 </html>

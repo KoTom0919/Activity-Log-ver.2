@@ -486,6 +486,21 @@ function renderTimeline() {
    予定
 ========================= */
 
+planTime.addEventListener("input", () => {
+  planTime.value = planTime.value
+    .replace(/[^0-9:]/g, "")
+    .slice(0, 5);
+});
+
+planTime.addEventListener("blur", () => {
+  const normalized =
+    normalizeTypedTime(planTime.value);
+
+  if (normalized) {
+    planTime.value = normalized;
+  }
+});
+
 function planOccurs(plan, date) {
   if (date < plan.date) {
     return false;
@@ -585,14 +600,30 @@ function renderPlanList() {
     weekly: "毎週"
   };
 
-  if (plans.length === 0) {
+  const visiblePlans =
+    plans.filter(plan => {
+      const completed =
+        records.some(record => {
+          return (
+            record.planId === plan.id &&
+            (
+              plan.repeat === "once" ||
+              record.date === getToday()
+            )
+          );
+        });
+
+      return !completed;
+    });
+
+  if (visiblePlans.length === 0) {
     list.innerHTML = `
       <p class="empty-message">
         予定はありません。
       </p>
     `;
   } else {
-    list.innerHTML = plans
+    list.innerHTML = visiblePlans
       .map(plan => {
         return `
           <article class="plan-list-item">
@@ -703,6 +734,11 @@ document
     const activity =
       planActivity.value.trim();
 
+    const normalizedTime =
+      normalizeTypedTime(
+        planTime.value
+      );
+
     const message =
       document.getElementById(
         "planMessage"
@@ -711,10 +747,10 @@ document
     if (
       !activity ||
       !planDate.value ||
-      !planTime.value
+      !normalizedTime
     ) {
       message.textContent =
-        "内容・日付・時刻を入力してください。";
+        "内容・日付と正しい時刻を入力してください。";
       return;
     }
 
@@ -724,7 +760,7 @@ document
         createRecordId(),
       activity,
       date: planDate.value,
-      time: planTime.value,
+      time: normalizedTime,
       repeat: planRepeat.value
     };
 
@@ -892,6 +928,7 @@ document
     ).classList.add("hidden");
 
     renderTimeline();
+    renderPlanList();
     drawGraph();
   });
 
@@ -1728,6 +1765,10 @@ document
   });
 
 function showPage(pageId) {
+  if (pageId === "planPage") {
+    renderPlanList();
+  }
+
   document
     .querySelectorAll(".page")
     .forEach(page => {
