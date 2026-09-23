@@ -1777,3 +1777,24 @@ input[type="date"]::-webkit-date-and-time-value {
 #planPage label, #completePanel label { display: block; margin-top: 14px; }
 #completePanel { margin: 15px 0; }
 @media print { #planPage, #completePanel { display: none !important; } }
+#planPage #planTime {
+  display: block !important;
+  width: calc(100% - 6px) !important;
+  max-width: calc(100% - 6px) !important;
+  min-width: 0 !important;
+  margin-right: auto !important;
+  margin-left: auto !important;
+  padding: 10px !important;
+  box-sizing: border-box !important;
+  text-align: center !important;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+#planPage #planTime::-webkit-date-and-time-value {
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: center !important;
+}
