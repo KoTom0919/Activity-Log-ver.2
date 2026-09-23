@@ -534,7 +534,7 @@ fieldset legend {
   z-index: 20;
   display: grid;
   grid-template-columns:
-    repeat(5,minmax(0, 1fr));
+    repeat(5, minmax(0, 1fr));
   background: white;
   border-top: 1px solid var(--border);
   box-shadow:
@@ -1759,6 +1759,21 @@ input[type="date"]::-webkit-date-and-time-value {
 .plan-list-item { padding: 12px; margin: 10px 0; border: 1px solid #e4b5b2; border-radius: 10px; overflow-wrap: anywhere; }
 .plan-list-item p { margin: 6px 0; }
 #planPage select, #completePanel select, #planTime { width: 100%; min-height: 44px; padding: 10px; border: 1px solid var(--border); border-radius: 9px; background: white; font: inherit; box-sizing: border-box; }
+#planPage #planTime {
+  display: block;
+  width: calc(100% - 6px);
+  max-width: calc(100% - 6px);
+  min-width: 0;
+  margin-right: auto;
+  margin-left: auto;
+  box-sizing: border-box;
+}
+#planPage #planTime::-webkit-date-and-time-value {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  text-align: center;
+}
 #planPage label, #completePanel label { display: block; margin-top: 14px; }
 #completePanel { margin: 15px 0; }
 @media print { #planPage, #completePanel { display: none !important; } }
