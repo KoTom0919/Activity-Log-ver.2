@@ -1760,24 +1760,6 @@ input[type="date"]::-webkit-date-and-time-value {
 .plan-list-item p { margin: 6px 0; }
 #planPage select, #completePanel select, #planTime { width: 100%; min-height: 44px; padding: 10px; border: 1px solid var(--border); border-radius: 9px; background: white; font: inherit; box-sizing: border-box; }
 #planPage #planTime {
-  display: block;
-  width: calc(100% - 6px);
-  max-width: calc(100% - 6px);
-  min-width: 0;
-  margin-right: auto;
-  margin-left: auto;
-  box-sizing: border-box;
-}
-#planPage #planTime::-webkit-date-and-time-value {
-  width: 100%;
-  min-width: 0;
-  margin: 0;
-  text-align: center;
-}
-#planPage label, #completePanel label { display: block; margin-top: 14px; }
-#completePanel { margin: 15px 0; }
-@media print { #planPage, #completePanel { display: none !important; } }
-#planPage #planTime {
   display: block !important;
   width: calc(100% - 6px) !important;
   max-width: calc(100% - 6px) !important;
@@ -1790,11 +1772,63 @@ input[type="date"]::-webkit-date-and-time-value {
   -webkit-appearance: none;
   appearance: none;
 }
-
 #planPage #planTime::-webkit-date-and-time-value {
   width: 100% !important;
   min-width: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
   text-align: center !important;
+}
+#planPage label, #completePanel label { display: block; margin-top: 14px; }
+#completePanel { margin: 15px 0; }
+@media print { #planPage, #completePanel { display: none !important; } }
+
+/* 期間指定の1日1ページ印刷 */
+.app-header { display: flex; align-items: center; justify-content: center; gap: 14px; }
+.header-print-button { padding: 7px 12px; border: 1px solid white; border-radius: 8px; background: white; color: var(--main-dark); font-weight: 700; }
+.print-dialog-card { width: min(420px, calc(100vw - 28px)); padding: 22px; background: white; border-radius: 14px; box-shadow: var(--shadow); }
+.print-dialog-card label { margin-top: 14px; }
+.print-dialog-card .form-actions { margin-top: 16px; }
+#dailyPrintRoot { display: none; }
+
+@media print {
+  @page { size: A4 portrait; margin: 8mm; }
+  body.print-daily { margin: 0; min-width: 0; background: white; }
+  body.print-daily > .app-header,
+  body.print-daily > main,
+  body.print-daily > .bottom-nav,
+  body.print-daily > #printDialog { display: none !important; }
+  body.print-daily > #dailyPrintRoot { display: block !important; }
+  .daily-print-page {
+    display: grid;
+    grid-template-rows: 12mm 76mm minmax(0, 1fr) 32mm;
+    gap: 4mm;
+    width: 194mm;
+    height: 281mm;
+    margin: 0 auto;
+    overflow: hidden;
+    color: #151515;
+    background: white;
+    break-after: page;
+    page-break-after: always;
+    box-sizing: border-box;
+  }
+  .daily-print-page:last-child { break-after: auto; page-break-after: auto; }
+  .daily-print-page h1 { margin: 0; text-align: center; font-size: 17pt; font-weight: 500; line-height: 12mm; }
+  .daily-print-graph { border: 1px solid #777; padding: 2mm 4mm; overflow: hidden; }
+  .daily-print-graph h2 { margin: 0; text-align: center; font-size: 11pt; line-height: 5mm; }
+  .daily-print-graph svg { display: block; width: 100%; height: 65mm; }
+  .daily-print-graph svg text { fill: #333; font-size: 12px; }
+  .daily-print-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6mm; min-height: 0; }
+  .daily-print-column { min-width: 0; min-height: 0; overflow: hidden; border: 1px solid #777; padding: 2mm 3mm; }
+  .daily-print-column:first-child { border-right: 2px solid #222; }
+  .daily-print-column h2 { margin: 0 0 2mm; text-align: center; font-size: 11pt; line-height: 1.2; }
+  .daily-print-list { font-size: 9pt; line-height: 1.3; }
+  .daily-print-record { padding: 1.5mm 0; border-bottom: 1px solid #ccc; break-inside: avoid; }
+  .daily-print-record-heading { display: flex; justify-content: space-between; gap: 2mm; }
+  .daily-print-record p { margin: 1mm 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .daily-print-empty { color: #555; text-align: center; }
+  .daily-print-memo { min-height: 0; overflow: hidden; border: 1px solid #777; padding: 2mm 3mm; }
+  .daily-print-memo h2 { margin: 0 0 1mm; text-align: center; font-size: 11pt; }
+  .daily-print-memo p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 9pt; line-height: 1.25; }
 }

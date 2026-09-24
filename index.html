@@ -5,12 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#58a98a">
   <title>活動記録表</title>
-  <link rel="stylesheet" href="style.css?v=22">
+  <link rel="stylesheet" href="style.css?v=24">
 </head>
 
 <body>
   <header class="app-header">
     <h1>活動記録表</h1>
+    <button
+      id="openPrintDialogButton"
+      class="header-print-button"
+      type="button"
+    >
+      印刷
+    </button>
   </header>
 
   <main>
@@ -33,7 +40,11 @@
             placeholder="例：800"
             autocomplete="off"
           >
-          <button id="nowButton" class="sub-button" type="button">
+          <button
+            id="nowButton"
+            class="sub-button"
+            type="button"
+          >
             現在時刻
           </button>
         </div>
@@ -72,7 +83,11 @@
           </p>
         </fieldset>
 
-        <p id="formMessage" class="message" aria-live="polite"></p>
+        <p
+          id="formMessage"
+          class="message"
+          aria-live="polite"
+        ></p>
 
         <div class="form-actions">
           <button
@@ -82,7 +97,11 @@
           >
             編集をキャンセル
           </button>
-          <button id="saveButton" class="primary-button" type="button">
+          <button
+            id="saveButton"
+            class="primary-button"
+            type="button"
+          >
             記録する
           </button>
         </div>
@@ -94,7 +113,7 @@
       <div class="card form-card">
         <h2>予定を登録</h2>
 
-        <label for="planActivity">何をするか</label>
+        <label for="planActivity">予定</label>
         <textarea
           id="planActivity"
           rows="3"
@@ -126,7 +145,12 @@
         <p class="mood-guide">
           毎週は開始日と同じ曜日に表示します。
         </p>
-        <p id="planMessage" class="message" aria-live="polite"></p>
+
+        <p
+          id="planMessage"
+          class="message"
+          aria-live="polite"
+        ></p>
 
         <div class="form-actions">
           <button
@@ -145,7 +169,7 @@
           </button>
         </div>
 
-        <h3>登録した予定</h3>
+        <h3>未完了の予定</h3>
         <div id="planList"></div>
       </div>
     </section>
@@ -170,13 +194,6 @@
             type="button"
           >
             全て表示
-          </button>
-          <button
-            id="timelinePrintButton"
-            class="print-button"
-            type="button"
-          >
-            印刷する
           </button>
         </div>
 
@@ -261,12 +278,6 @@
         </div>
       </div>
 
-      <div
-        id="timelinePrintPages"
-        class="timeline-print-pages"
-        aria-hidden="true"
-      ></div>
-
       <button
         id="clearAllButton"
         class="danger-button"
@@ -298,13 +309,6 @@
             >
               全て表示
             </button>
-            <button
-              id="graphPrintButton"
-              class="print-button"
-              type="button"
-            >
-              印刷する
-            </button>
           </div>
 
           <p
@@ -330,7 +334,9 @@
     <section id="searchPage" class="page">
       <div class="section-heading">
         <h2>記録を検索</h2>
-        <span id="searchResultCount" class="count-badge">0件</span>
+        <span id="searchResultCount" class="count-badge">
+          0件
+        </span>
       </div>
 
       <div class="search-filter-card">
@@ -431,7 +437,10 @@
           設定
         </button>
 
-        <div id="routineSettings" class="routine-settings hidden">
+        <div
+          id="routineSettings"
+          class="routine-settings hidden"
+        >
           <h3>よくする活動を編集</h3>
 
           <div class="routine-add-row">
@@ -458,6 +467,52 @@
       </div>
     </div>
   </main>
+
+  <!-- 印刷する期間の選択画面 -->
+  <div
+    id="printDialog"
+    class="modal-backdrop hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="printDialogTitle"
+    aria-hidden="true"
+  >
+    <div class="print-dialog-card">
+      <h2 id="printDialogTitle">印刷する期間</h2>
+
+      <label for="printStartDate">開始日</label>
+      <input id="printStartDate" type="date">
+
+      <label for="printEndDate">終了日</label>
+      <input id="printEndDate" type="date">
+
+      <p
+        id="printDialogMessage"
+        class="filter-message"
+        aria-live="polite"
+      ></p>
+
+      <div class="form-actions">
+        <button
+          id="cancelPrintButton"
+          class="secondary-button"
+          type="button"
+        >
+          キャンセル
+        </button>
+        <button
+          id="executePrintButton"
+          class="primary-button"
+          type="button"
+        >
+          印刷
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 印刷専用 -->
+  <div id="dailyPrintRoot" aria-hidden="true"></div>
 
   <!-- 下部メニュー -->
   <nav class="bottom-nav">
@@ -508,6 +563,6 @@
   </nav>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="script.js?v=23"></script>
+  <script src="script.js?v=24"></script>
 </body>
 </html>

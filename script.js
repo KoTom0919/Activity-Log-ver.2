@@ -1149,83 +1149,262 @@ function renderRoutineActivities() {
 }
 
 /* =========================
-   印刷
+   日ごとの印刷
 ========================= */
 
-document
-  .getElementById("timelinePrintButton")
-  .addEventListener("click", printTimeline);
+const printDialog = document.getElementById("printDialog");
+const printStartDate = document.getElementById("printStartDate");
+const printEndDate = document.getElementById("printEndDate");
+const printDialogMessage =
+  document.getElementById("printDialogMessage");
 
 document
-  .getElementById("graphPrintButton")
+  .getElementById("openPrintDialogButton")
   .addEventListener("click", () => {
-    document.body.classList.add("print-graph");
-    setTimeout(() => window.print(), 100);
+    const today = getToday();
+
+    printStartDate.value =
+      timelineDateInput.value || today;
+    printEndDate.value = printStartDate.value;
+    printDialogMessage.textContent = "";
+
+    printDialog.classList.remove("hidden");
+    printDialog.setAttribute("aria-hidden", "false");
+    printStartDate.focus();
+  });
+
+function closePrintDialog() {
+  printDialog.classList.add("hidden");
+  printDialog.setAttribute("aria-hidden", "true");
+}
+
+document
+  .getElementById("cancelPrintButton")
+  .addEventListener("click", closePrintDialog);
+
+printDialog.addEventListener("click", event => {
+  if (event.target === printDialog) {
+    closePrintDialog();
+  }
+});
+
+document
+  .getElementById("executePrintButton")
+  .addEventListener("click", () => {
+    const start = printStartDate.value;
+    const end = printEndDate.value;
+
+    if (!start || !end || start > end) {
+      printDialogMessage.textContent =
+        "開始日と終了日を正しい順序で選んでください。";
+      return;
+    }
+
+    const days = [];
+    const current =
+      new Date(`${start}T12:00:00`);
+    const last =
+      new Date(`${end}T12:00:00`);
+
+    while (
+      current <= last &&
+      days.length <= 366
+    ) {
+      days.push(formatInputDate(current));
+      current.setDate(current.getDate() + 1);
+    }
+
+    if (days.length > 366) {
+      printDialogMessage.textContent =
+        "印刷期間は366日以内にしてください。";
+      return;
+    }
+
+    document.getElementById("dailyPrintRoot").innerHTML =
+      days.map(buildDailyPrintPage).join("");
+
+    closePrintDialog();
+    document.body.classList.add("print-daily");
+
+    requestAnimationFrame(() => {
+      window.print();
+    });
   });
 
 window.addEventListener("afterprint", () => {
-  document.body.classList.remove(
-    "print-timeline",
-    "print-graph"
-  );
+  document.body.classList.remove("print-daily");
 });
 
-function printTimeline() {
-  buildTimelinePrintArea();
-  document.body.classList.add("print-timeline");
-  setTimeout(() => window.print(), 100);
-}
+function buildDailyPrintPage(date) {
+  const items = getSortedRecords().filter(
+    record => record.date === date
+  );
 
-function buildTimelinePrintArea() {
-  const printArea =
-    document.getElementById("timelinePrintPages");
-  const items = getTimelineRecords();
-  const selectedDate = timelineDateInput.value;
-  const memo = selectedDate
-    ? dailyMemos[selectedDate] || ""
-    : "";
+  const middle = Math.ceil(items.length / 2);
+  const memo = dailyMemos[date] || "";
 
-  const recordsHtml = items.length
-    ? items.map(record => `
-        <article class="timeline-print-item">
-          <div class="timeline-print-record-head">
-            <span>
-              ${formatDate(record.date)}
-              ${escapeHtml(record.time)}
-            </span>
+  const column = part => part.length
+    ? part.map(record => `
+        <div class="daily-print-record">
+          <div class="daily-print-record-heading">
+            <strong>${escapeHtml(record.time)}</strong>
             <span>
               気分 ${formatMood(Number(record.mood))}
             </span>
           </div>
           <p>${escapeHtml(record.activity)}</p>
-        </article>
+        </div>
       `).join("")
-    : `
-        <p class="timeline-print-empty">
-          この日の記録はありません。
-        </p>
-      `;
+    : '<p class="daily-print-empty">記録なし</p>';
 
-  const memoHtml = memo
-    ? `
-        <section class="timeline-print-memos">
-          <h2>メモ</h2>
-          <p>${escapeHtml(memo)}</p>
+  return `
+    <section class="daily-print-page">
+      <h1>
+        ${escapeHtml(date.replace(/-/g, "/"))}
+        活動記録表
+      </h1>
+
+      <section class="daily-print-graph">
+        <h2>グラフ</h2>
+        ${buildDailyGraphSvg(items)}
+      </section>
+
+      <div class="daily-print-columns">
+        <section class="daily-print-column">
+          <h2>活動記録表<br>前半</h2>
+          <div class="daily-print-list">
+            ${column(items.slice(0, middle))}
+          </div>
         </section>
-      `
-    : "";
 
-  printArea.innerHTML = `
-    <section class="timeline-print-page">
-      <div class="timeline-print-header">
-        <h2>活動記録表</h2>
-        <span>${items.length}件</span>
+        <section class="daily-print-column">
+          <h2>活動記録表<br>後半</h2>
+          <div class="daily-print-list">
+            ${column(items.slice(middle))}
+          </div>
+        </section>
       </div>
-      <div class="timeline-print-records">
-        ${recordsHtml}
-      </div>
-      ${memoHtml}
+
+      <section class="daily-print-memo">
+        <h2>メモ</h2>
+        <p>${memo ? escapeHtml(memo) : "メモなし"}</p>
+      </section>
     </section>
+  `;
+}
+
+function buildDailyGraphSvg(items) {
+  const left = 44;
+  const right = 716;
+  const top = 16;
+  const bottom = 177;
+
+  const y = mood =>
+    bottom -
+    (Number(mood) + 3) *
+      (bottom - top) / 6;
+
+  const x = time =>
+    left +
+    (
+      Number(time.slice(0, 2)) * 60 +
+      Number(time.slice(3, 5))
+    ) *
+      (right - left) / 1440;
+
+  const grid =
+    [-3, -2, -1, 0, 1, 2, 3]
+      .map(value => `
+        <line
+          x1="${left}"
+          y1="${y(value)}"
+          x2="${right}"
+          y2="${y(value)}"
+          stroke="#dde4ef"
+        />
+        <text
+          x="36"
+          y="${y(value) + 4}"
+          text-anchor="end"
+        >
+          ${value}
+        </text>
+      `)
+      .join("");
+
+  const ticks =
+    [0, 6, 12, 18, 24]
+      .map(hour => {
+        const position =
+          left +
+          hour * (right - left) / 24;
+
+        return `
+          <line
+            x1="${position}"
+            y1="${top}"
+            x2="${position}"
+            y2="${bottom}"
+            stroke="#dde4ef"
+          />
+          <text
+            x="${position}"
+            y="195"
+            text-anchor="middle"
+          >
+            ${hour}:00
+          </text>
+        `;
+      })
+      .join("");
+
+  const points = items
+    .map(item =>
+      `${x(getSortableTime(item.time))},${y(item.mood)}`
+    )
+    .join(" ");
+
+  const dots = items
+    .map(item => `
+      <circle
+        cx="${x(getSortableTime(item.time))}"
+        cy="${y(item.mood)}"
+        r="4"
+        fill="${moodColor(Number(item.mood))}"
+      />
+    `)
+    .join("");
+
+  return `
+    <svg
+      viewBox="0 0 750 205"
+      role="img"
+      aria-label="時刻に対する気分の推移"
+    >
+      <rect
+        x="0"
+        y="0"
+        width="750"
+        height="205"
+        fill="white"
+      />
+
+      ${grid}
+      ${ticks}
+
+      ${items.length > 1
+        ? `
+          <polyline
+            points="${points}"
+            fill="none"
+            stroke="#3973be"
+            stroke-width="2.5"
+          />
+        `
+        : ""}
+
+      ${dots}
+    </svg>
   `;
 }
 
@@ -1333,12 +1512,16 @@ function normalizeTypedTime(value) {
   } else {
     const numbers = text.replace(/\D/g, "");
 
-    if (numbers.length === 1 ||
-        numbers.length === 2) {
+    if (
+      numbers.length === 1 ||
+      numbers.length === 2
+    ) {
       hourText = numbers;
       minuteText = "00";
-    } else if (numbers.length === 3 ||
-               numbers.length === 4) {
+    } else if (
+      numbers.length === 3 ||
+      numbers.length === 4
+    ) {
       hourText = numbers.slice(0, -2);
       minuteText = numbers.slice(-2);
     } else {
