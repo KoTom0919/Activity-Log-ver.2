@@ -23,55 +23,27 @@ const activityInput = document.getElementById("activity");
 const formMessage = document.getElementById("formMessage");
 const saveButton = document.getElementById("saveButton");
 const cancelEditButton = document.getElementById("cancelEditButton");
-
-const timelineDateInput =
-  document.getElementById("timelineDisplayDate");
-
-const graphDateInput =
-  document.getElementById("graphDisplayDate");
-
-const dailyMemoInput =
-  document.getElementById("dailyMemo");
-
-const dailyMemoMessage =
-  document.getElementById("dailyMemoMessage");
-
-const saveDailyMemoButton =
-  document.getElementById("saveDailyMemoButton");
-
-const searchMoodInput =
-  document.getElementById("searchMood");
+const timelineDateInput = document.getElementById("timelineDisplayDate");
+const graphDateInput = document.getElementById("graphDisplayDate");
+const dailyMemoInput = document.getElementById("dailyMemo");
+const dailyMemoMessage = document.getElementById("dailyMemoMessage");
+const saveDailyMemoButton = document.getElementById("saveDailyMemoButton");
+const searchMoodInput = document.getElementById("searchMood");
 
 const moodButtons = [
   ...document.querySelectorAll("#moodButtons button")
 ];
 
-const routineModal =
-  document.getElementById("routineModal");
+const routineModal = document.getElementById("routineModal");
+const routineList = document.getElementById("routineList");
+const routineSettings = document.getElementById("routineSettings");
+const routineEditList = document.getElementById("routineEditList");
+const newRoutineInput = document.getElementById("newRoutineInput");
 
-const routineList =
-  document.getElementById("routineList");
-
-const routineSettings =
-  document.getElementById("routineSettings");
-
-const routineEditList =
-  document.getElementById("routineEditList");
-
-const newRoutineInput =
-  document.getElementById("newRoutineInput");
-
-const planActivity =
-  document.getElementById("planActivity");
-
-const planDate =
-  document.getElementById("planDate");
-
-const planTime =
-  document.getElementById("planTime");
-
-const planRepeat =
-  document.getElementById("planRepeat");
+const planActivity = document.getElementById("planActivity");
+const planDate = document.getElementById("planDate");
+const planTime = document.getElementById("planTime");
+const planRepeat = document.getElementById("planRepeat");
 
 /* =========================
    記録入力
@@ -82,11 +54,7 @@ document
   .addEventListener("click", setCurrentDateTime);
 
 saveButton.addEventListener("click", saveRecord);
-
-cancelEditButton.addEventListener(
-  "click",
-  resetForm
-);
+cancelEditButton.addEventListener("click", resetForm);
 
 timeInput.addEventListener("input", () => {
   timeInput.value = timeInput.value
@@ -95,16 +63,10 @@ timeInput.addEventListener("input", () => {
 });
 
 timeInput.addEventListener("blur", () => {
-  if (!timeInput.value.trim()) {
-    return;
-  }
+  if (!timeInput.value.trim()) return;
 
-  const normalized =
-    normalizeTypedTime(timeInput.value);
-
-  if (normalized) {
-    timeInput.value = normalized;
-  }
+  const normalized = normalizeTypedTime(timeInput.value);
+  if (normalized) timeInput.value = normalized;
 });
 
 moodButtons.forEach(button => {
@@ -121,24 +83,15 @@ function selectMood(mood) {
       mood !== null &&
       Number(button.dataset.mood) === mood;
 
-    button.classList.toggle(
-      "selected",
-      selected
-    );
-
-    button.setAttribute(
-      "aria-pressed",
-      String(selected)
-    );
+    button.classList.toggle("selected", selected);
+    button.setAttribute("aria-pressed", String(selected));
   });
 }
 
 function saveRecord() {
   const date = dateInput.value;
-  const time =
-    normalizeTypedTime(timeInput.value);
-  const activity =
-    activityInput.value.trim();
+  const time = normalizeTypedTime(timeInput.value);
+  const activity = activityInput.value.trim();
 
   if (!date) {
     showFormMessage("日付を入力してください。");
@@ -161,7 +114,6 @@ function saveRecord() {
   }
 
   const wasEditing = editingId !== null;
-
   const existingRecord = wasEditing
     ? records.find(item => item.id === editingId)
     : null;
@@ -178,49 +130,36 @@ function saveRecord() {
   };
 
   if (wasEditing) {
-    records = records.map(item => {
-      return item.id === editingId
-        ? record
-        : item;
-    });
+    records = records.map(item =>
+      item.id === editingId ? record : item
+    );
   } else {
     records.push(record);
   }
 
   saveJson(STORAGE_KEY, records);
-
   renderTimeline();
   drawGraph();
   resetForm();
 
   showFormMessage(
-    wasEditing
-      ? "記録を更新しました。"
-      : "記録しました。",
+    wasEditing ? "記録を更新しました。" : "記録しました。",
     true
   );
 }
 
 function editRecord(id) {
-  const record =
-    records.find(item => item.id === id);
-
-  if (!record) {
-    return;
-  }
+  const record = records.find(item => item.id === id);
+  if (!record) return;
 
   editingId = id;
   dateInput.value = record.date;
   timeInput.value = record.time;
   activityInput.value = record.activity;
-
   selectMood(Number(record.mood));
 
   saveButton.textContent = "更新する";
-
-  cancelEditButton.classList.remove(
-    "hidden"
-  );
+  cancelEditButton.classList.remove("hidden");
 
   showFormMessage("");
   showPage("inputPage");
@@ -228,48 +167,27 @@ function editRecord(id) {
 }
 
 function deleteRecord(id) {
-  const confirmed = window.confirm(
-    "この記録を削除しますか？"
-  );
+  if (!window.confirm("この記録を削除しますか？")) return;
 
-  if (!confirmed) {
-    return;
-  }
-
-  records = records.filter(
-    item => item.id !== id
-  );
-
+  records = records.filter(item => item.id !== id);
   saveJson(STORAGE_KEY, records);
-
   renderTimeline();
   drawGraph();
 }
 
 document
   .getElementById("clearAllButton")
-  .addEventListener(
-    "click",
-    clearAllRecords
-  );
+  .addEventListener("click", clearAllRecords);
 
 function clearAllRecords() {
-  if (records.length === 0) {
-    return;
-  }
+  if (records.length === 0) return;
 
-  const confirmed = window.confirm(
-    "すべての活動記録を削除しますか？"
-  );
-
-  if (!confirmed) {
+  if (!window.confirm("すべての活動記録を削除しますか？")) {
     return;
   }
 
   records = [];
-
   saveJson(STORAGE_KEY, records);
-
   renderTimeline();
   drawGraph();
 }
@@ -277,99 +195,58 @@ function clearAllRecords() {
 function resetForm() {
   editingId = null;
   activityInput.value = "";
-
   selectMood(null);
   setCurrentDateTime();
 
   saveButton.textContent = "記録する";
-
-  cancelEditButton.classList.add(
-    "hidden"
-  );
+  cancelEditButton.classList.add("hidden");
 }
 
-function showFormMessage(
-  text,
-  success = false
-) {
+function showFormMessage(text, success = false) {
   formMessage.textContent = text;
-
-  formMessage.classList.toggle(
-    "success",
-    success
-  );
+  formMessage.classList.toggle("success", success);
 }
 
 /* =========================
    時系列
 ========================= */
 
-timelineDateInput.addEventListener(
-  "change",
-  () => {
-    document.getElementById(
-      "timelineFilterMessage"
-    ).textContent = "";
-
-    renderTimeline();
-
-    loadDailyMemo(
-      timelineDateInput.value
-    );
-  }
-);
+timelineDateInput.addEventListener("change", () => {
+  document.getElementById("timelineFilterMessage").textContent = "";
+  renderTimeline();
+  loadDailyMemo(timelineDateInput.value);
+});
 
 document
   .getElementById("timelineResetButton")
   .addEventListener("click", () => {
     timelineDateInput.value = "";
-
-    document.getElementById(
-      "timelineFilterMessage"
-    ).textContent = "";
-
+    document.getElementById("timelineFilterMessage").textContent = "";
     renderTimeline();
     loadDailyMemo("");
   });
 
 function getTimelineRecords() {
-  const selectedDate =
-    timelineDateInput.value;
+  const selectedDate = timelineDateInput.value;
 
-  return getSortedRecords().filter(
-    record => {
-      return (
-        !selectedDate ||
-        record.date === selectedDate
-      );
-    }
+  return getSortedRecords().filter(record =>
+    !selectedDate || record.date === selectedDate
   );
 }
 
 function renderTimeline() {
-  const timeline =
-    document.getElementById("timeline");
-
+  const timeline = document.getElementById("timeline");
   const items = getTimelineRecords();
-  const pending =
-    pendingPlans(timelineDateInput.value);
+  const pending = pendingPlans(timelineDateInput.value);
 
-  document.getElementById(
-    "recordCount"
-  ).textContent =
+  document.getElementById("recordCount").textContent =
     `${items.length + pending.length}件`;
 
   document
     .getElementById("clearAllButton")
-    .classList.toggle(
-      "hidden",
-      records.length === 0
-    );
+    .classList.toggle("hidden", records.length === 0);
 
-  if (
-    items.length === 0 &&
-    pending.length === 0
-  ) {
+  if (items.length === 0 && pending.length === 0) {
     timeline.innerHTML = `
       <p class="empty-message">
         この日の記録はありません。
@@ -378,107 +255,83 @@ function renderTimeline() {
     return;
   }
 
-  const completedHtml = items
-    .map(record => {
-      return `
-        <article class="timeline-item">
-          <div class="record-head">
-            <time
-              class="record-date"
-              datetime="${record.date}T${getSortableTime(
-                record.time
-              )}"
-            >
-              ${formatDate(record.date)}
-              ${escapeHtml(record.time)}
-            </time>
+  const completedHtml = items.map(record => `
+    <article class="timeline-item">
+      <div class="record-head">
+        <time
+          class="record-date"
+          datetime="${record.date}T${getSortableTime(record.time)}"
+        >
+          ${formatDate(record.date)}
+          ${escapeHtml(record.time)}
+        </time>
 
-            <span
-              class="mood-badge"
-              style="background:${moodColor(
-                Number(record.mood)
-              )}"
-            >
-              気分
-              ${formatMood(
-                Number(record.mood)
-              )}
-            </span>
-          </div>
+        <span
+          class="mood-badge"
+          style="background:${moodColor(Number(record.mood))}"
+        >
+          気分 ${formatMood(Number(record.mood))}
+        </span>
+      </div>
 
-          <p class="activity-text">
-            ${escapeHtml(record.activity)}
-          </p>
+      <p class="activity-text">
+        ${escapeHtml(record.activity)}
+      </p>
 
-          <div class="record-actions">
-            <button
-              type="button"
-              onclick="editRecord('${record.id}')"
-            >
-              編集
-            </button>
+      <div class="record-actions">
+        <button
+          type="button"
+          onclick="editRecord('${record.id}')"
+        >
+          編集
+        </button>
+        <button
+          type="button"
+          class="delete-button"
+          onclick="deleteRecord('${record.id}')"
+        >
+          削除
+        </button>
+      </div>
+    </article>
+  `).join("");
 
-            <button
-              type="button"
-              class="delete-button"
-              onclick="deleteRecord('${record.id}')"
-            >
-              削除
-            </button>
-          </div>
-        </article>
-      `;
-    })
-    .join("");
+  const pendingHtml = pending.map(({ plan, date }) => `
+    <article class="timeline-item pending-plan">
+      <div class="record-head">
+        <time class="record-date">
+          ${formatDate(date)} ${escapeHtml(plan.time)}
+        </time>
+        <span class="plan-badge">予定</span>
+      </div>
 
-  const pendingHtml = pending
-    .map(({ plan, date }) => {
-      return `
-        <article class="timeline-item pending-plan">
-          <div class="record-head">
-            <time class="record-date">
-              ${formatDate(date)}
-              ${escapeHtml(plan.time)}
-            </time>
+      <p class="activity-text">
+        ${escapeHtml(plan.activity)}
+      </p>
 
-            <span class="plan-badge">
-              予定
-            </span>
-          </div>
+      <div class="record-actions">
+        <button
+          type="button"
+          data-plan-complete="${escapeHtml(plan.id)}"
+          data-date="${date}"
+        >
+          編集・完了
+        </button>
+      </div>
+    </article>
+  `).join("");
 
-          <p class="activity-text">
-            ${escapeHtml(plan.activity)}
-          </p>
-
-          <div class="record-actions">
-            <button
-              type="button"
-              data-plan-complete="${escapeHtml(plan.id)}"
-              data-date="${date}"
-            >
-              編集・完了
-            </button>
-          </div>
-        </article>
-      `;
-    })
-    .join("");
-
-  timeline.innerHTML =
-    completedHtml + pendingHtml;
+  timeline.innerHTML = completedHtml + pendingHtml;
 
   timeline
     .querySelectorAll("[data-plan-complete]")
     .forEach(button => {
-      button.addEventListener(
-        "click",
-        () => {
-          completePlan(
-            button.dataset.planComplete,
-            button.dataset.date
-          );
-        }
-      );
+      button.addEventListener("click", () => {
+        completePlan(
+          button.dataset.planComplete,
+          button.dataset.date
+        );
+      });
     });
 }
 
@@ -493,35 +346,18 @@ planTime.addEventListener("input", () => {
 });
 
 planTime.addEventListener("blur", () => {
-  const normalized =
-    normalizeTypedTime(planTime.value);
-
-  if (normalized) {
-    planTime.value = normalized;
-  }
+  const normalized = normalizeTypedTime(planTime.value);
+  if (normalized) planTime.value = normalized;
 });
 
 function planOccurs(plan, date) {
-  if (date < plan.date) {
-    return false;
-  }
+  if (date < plan.date) return false;
+  if (plan.repeat === "once") return date === plan.date;
+  if (plan.repeat === "daily") return true;
 
-  if (plan.repeat === "once") {
-    return date === plan.date;
-  }
-
-  if (plan.repeat === "daily") {
-    return true;
-  }
-
-  const start =
-    new Date(`${plan.date}T12:00:00`);
-
-  const target =
-    new Date(`${date}T12:00:00`);
-
-  return start.getDay() ===
-    target.getDay();
+  const start = new Date(`${plan.date}T12:00:00`);
+  const target = new Date(`${date}T12:00:00`);
+  return start.getDay() === target.getDay();
 }
 
 function pendingPlans(selectedDate) {
@@ -538,61 +374,53 @@ function pendingPlans(selectedDate) {
         today.getMonth(),
         today.getDate() + i
       );
-
       dates.push(formatInputDate(day));
     }
   }
 
-  return dates
-    .flatMap(date => {
-      return plans
-        .filter(plan => {
-          const alreadyCompleted =
-            records.some(record => {
-              return (
-                record.planId === plan.id &&
-                record.date === date
-              );
-            });
-
-          return (
-            planOccurs(plan, date) &&
-            !alreadyCompleted
-          );
-        })
-        .map(plan => ({ plan, date }));
-    })
-    .sort((a, b) => {
-      const first =
-        `${a.date}${a.plan.time}`;
-
-      const second =
-        `${b.date}${b.plan.time}`;
-
-      return first.localeCompare(second);
-    });
+  return dates.flatMap(date =>
+    plans
+      .filter(plan =>
+        planOccurs(plan, date) &&
+        !records.some(record =>
+          record.planId === plan.id &&
+          record.date === date
+        )
+      )
+      .map(plan => ({ plan, date }))
+  ).sort((a, b) =>
+    `${a.date}${a.plan.time}`.localeCompare(
+      `${b.date}${b.plan.time}`
+    )
+  );
 }
 
 function resetPlanForm() {
   editingPlanId = null;
   planActivity.value = "";
-  planDate.value =
-    formatInputDate(new Date());
+  planDate.value = formatInputDate(new Date());
   planTime.value = "";
   planRepeat.value = "once";
 
-  document.getElementById(
-    "savePlanButton"
-  ).textContent = "予定を登録";
-
-  document.getElementById(
-    "cancelPlanButton"
-  ).classList.add("hidden");
+  document.getElementById("savePlanButton").textContent =
+    "予定を登録";
+  document.getElementById("cancelPlanButton")
+    .classList.add("hidden");
 }
 
 function renderPlanList() {
-  const list =
-    document.getElementById("planList");
+  const list = document.getElementById("planList");
+
+  const visiblePlans = plans.filter(plan => {
+    const completed = records.some(record =>
+      record.planId === plan.id &&
+      (
+        plan.repeat === "once" ||
+        record.date === getToday()
+      )
+    );
+    return !completed;
+  });
 
   const repeatLabels = {
     once: "その日限り",
@@ -600,243 +428,136 @@ function renderPlanList() {
     weekly: "毎週"
   };
 
-  const visiblePlans =
-    plans.filter(plan => {
-      const completed =
-        records.some(record => {
-          return (
-            record.planId === plan.id &&
-            (
-              plan.repeat === "once" ||
-              record.date === getToday()
-            )
-          );
-        });
-
-      return !completed;
-    });
-
-  if (visiblePlans.length === 0) {
-    list.innerHTML = `
-      <p class="empty-message">
-        予定はありません。
-      </p>
-    `;
-  } else {
-    list.innerHTML = visiblePlans
-      .map(plan => {
-        return `
-          <article class="plan-list-item">
-            <strong>
-              ${escapeHtml(plan.activity)}
-            </strong>
-
-            <p>
-              ${formatDate(plan.date)}
-              ${escapeHtml(plan.time)}
-              · ${repeatLabels[plan.repeat] || ""}
-            </p>
-
-            <div class="record-actions">
-              <button
-                type="button"
-                data-edit-plan="${escapeHtml(plan.id)}"
-              >
-                編集
-              </button>
-
-              <button
-                type="button"
-                class="delete-button"
-                data-delete-plan="${escapeHtml(plan.id)}"
-              >
-                削除
-              </button>
-            </div>
-          </article>
-        `;
-      })
-      .join("");
-  }
+  list.innerHTML = visiblePlans.length
+    ? visiblePlans.map(plan => `
+        <article class="plan-list-item">
+          <strong>${escapeHtml(plan.activity)}</strong>
+          <p>
+            ${formatDate(plan.date)}
+            ${escapeHtml(plan.time)}
+            · ${repeatLabels[plan.repeat] || ""}
+          </p>
+          <div class="record-actions">
+            <button
+              type="button"
+              data-edit-plan="${escapeHtml(plan.id)}"
+            >
+              編集
+            </button>
+            <button
+              type="button"
+              class="delete-button"
+              data-delete-plan="${escapeHtml(plan.id)}"
+            >
+              削除
+            </button>
+          </div>
+        </article>
+      `).join("")
+    : '<p class="empty-message">予定はありません。</p>';
 
   list
     .querySelectorAll("[data-edit-plan]")
     .forEach(button => {
-      button.addEventListener(
-        "click",
-        () => {
-          const plan = plans.find(item => {
-            return item.id ===
-              button.dataset.editPlan;
-          });
+      button.addEventListener("click", () => {
+        const plan = plans.find(
+          item => item.id === button.dataset.editPlan
+        );
+        if (!plan) return;
 
-          if (!plan) {
-            return;
-          }
+        editingPlanId = plan.id;
+        planActivity.value = plan.activity;
+        planDate.value = plan.date;
+        planTime.value = plan.time;
+        planRepeat.value = plan.repeat;
 
-          editingPlanId = plan.id;
-          planActivity.value =
-            plan.activity;
-          planDate.value = plan.date;
-          planTime.value = plan.time;
-          planRepeat.value =
-            plan.repeat;
+        document.getElementById("savePlanButton").textContent =
+          "予定を更新";
+        document.getElementById("cancelPlanButton")
+          .classList.remove("hidden");
 
-          document.getElementById(
-            "savePlanButton"
-          ).textContent = "予定を更新";
-
-          document.getElementById(
-            "cancelPlanButton"
-          ).classList.remove("hidden");
-
-          planActivity.focus();
-        }
-      );
+        planActivity.focus();
+      });
     });
 
   list
     .querySelectorAll("[data-delete-plan]")
     .forEach(button => {
-      button.addEventListener(
-        "click",
-        () => {
-          const confirmed =
-            window.confirm(
-              "この予定を削除しますか？完了済みの記録は残ります。"
-            );
+      button.addEventListener("click", () => {
+        if (!window.confirm(
+          "この予定を削除しますか？完了済みの記録は残ります。"
+        )) return;
 
-          if (!confirmed) {
-            return;
-          }
-
-          plans = plans.filter(item => {
-            return item.id !==
-              button.dataset.deletePlan;
-          });
-
-          saveJson(
-            PLAN_STORAGE_KEY,
-            plans
-          );
-
-          resetPlanForm();
-          renderPlanList();
-          renderTimeline();
-        }
-      );
+        plans = plans.filter(
+          item => item.id !== button.dataset.deletePlan
+        );
+        saveJson(PLAN_STORAGE_KEY, plans);
+        resetPlanForm();
+        renderPlanList();
+        renderTimeline();
+      });
     });
 }
 
 document
   .getElementById("savePlanButton")
   .addEventListener("click", () => {
-    const activity =
-      planActivity.value.trim();
-
+    const activity = planActivity.value.trim();
     const normalizedTime =
-      normalizeTypedTime(
-        planTime.value
-      );
-
+      normalizeTypedTime(planTime.value);
     const message =
-      document.getElementById(
-        "planMessage"
-      );
+      document.getElementById("planMessage");
 
-    if (
-      !activity ||
-      !planDate.value ||
-      !normalizedTime
-    ) {
+    if (!activity || !planDate.value || !normalizedTime) {
       message.textContent =
         "内容・日付と正しい時刻を入力してください。";
       return;
     }
 
     const plan = {
-      id:
-        editingPlanId ||
-        createRecordId(),
+      id: editingPlanId || createRecordId(),
       activity,
       date: planDate.value,
       time: normalizedTime,
       repeat: planRepeat.value
     };
 
-    if (editingPlanId) {
-      plans = plans.map(item => {
-        return item.id === editingPlanId
-          ? plan
-          : item;
-      });
-    } else {
-      plans.push(plan);
-    }
+    plans = editingPlanId
+      ? plans.map(item =>
+          item.id === editingPlanId ? plan : item
+        )
+      : [...plans, plan];
 
-    const saved = saveJson(
-      PLAN_STORAGE_KEY,
-      plans
-    );
-
-    if (!saved) {
-      message.textContent =
-        "保存できませんでした。";
+    if (!saveJson(PLAN_STORAGE_KEY, plans)) {
+      message.textContent = "保存できませんでした。";
       return;
     }
 
     resetPlanForm();
     renderPlanList();
     renderTimeline();
-
-    message.textContent =
-      "予定を保存しました。";
+    message.textContent = "予定を保存しました。";
   });
 
 document
   .getElementById("cancelPlanButton")
-  .addEventListener(
-    "click",
-    resetPlanForm
-  );
+  .addEventListener("click", resetPlanForm);
 
 function completePlan(id, date) {
-  const plan =
-    plans.find(item => item.id === id);
+  const plan = plans.find(item => item.id === id);
+  if (!plan) return;
 
-  if (!plan) {
-    return;
-  }
+  completingPlan = { plan, date };
 
-  completingPlan = {
-    plan,
-    date
-  };
-
-  document.getElementById(
-    "completeDateLabel"
-  ).textContent =
+  document.getElementById("completeDateLabel").textContent =
     `${formatDate(date)} ${plan.time}`;
+  document.getElementById("completeActivity").value =
+    plan.activity;
+  document.getElementById("completeMood").value = "";
+  document.getElementById("completeMessage").textContent = "";
 
-  document.getElementById(
-    "completeActivity"
-  ).value = plan.activity;
-
-  document.getElementById(
-    "completeMood"
-  ).value = "";
-
-  document.getElementById(
-    "completeMessage"
-  ).textContent = "";
-
-  const panel =
-    document.getElementById(
-      "completePanel"
-    );
-
+  const panel = document.getElementById("completePanel");
   panel.classList.remove("hidden");
-
   panel.scrollIntoView({
     behavior: "smooth",
     block: "center"
@@ -844,61 +565,36 @@ function completePlan(id, date) {
 }
 
 document
-  .getElementById(
-    "cancelCompleteButton"
-  )
+  .getElementById("cancelCompleteButton")
   .addEventListener("click", () => {
     completingPlan = null;
-
-    document.getElementById(
-      "completePanel"
-    ).classList.add("hidden");
+    document.getElementById("completePanel")
+      .classList.add("hidden");
   });
 
 document
-  .getElementById(
-    "finishPlanButton"
-  )
+  .getElementById("finishPlanButton")
   .addEventListener("click", () => {
-    if (!completingPlan) {
-      return;
-    }
+    if (!completingPlan) return;
 
-    const activity =
-      document.getElementById(
-        "completeActivity"
-      ).value.trim();
-
+    const activity = document
+      .getElementById("completeActivity")
+      .value.trim();
     const mood =
-      document.getElementById(
-        "completeMood"
-      ).value;
+      document.getElementById("completeMood").value;
 
-    if (
-      !activity ||
-      mood === ""
-    ) {
-      document.getElementById(
-        "completeMessage"
-      ).textContent =
+    if (!activity || mood === "") {
+      document.getElementById("completeMessage").textContent =
         "活動内容と気分を入力してください。";
       return;
     }
 
-    const { plan, date } =
-      completingPlan;
+    const { plan, date } = completingPlan;
 
-    const alreadyCompleted =
-      records.some(record => {
-        return (
-          record.planId === plan.id &&
-          record.date === date
-        );
-      });
-
-    if (alreadyCompleted) {
-      return;
-    }
+    if (records.some(record =>
+      record.planId === plan.id &&
+      record.date === date
+    )) return;
 
     const record = {
       id: createRecordId(),
@@ -911,21 +607,14 @@ document
 
     records.push(record);
 
-    const saved = saveJson(
-      STORAGE_KEY,
-      records
-    );
-
-    if (!saved) {
+    if (!saveJson(STORAGE_KEY, records)) {
       records.pop();
       return;
     }
 
     completingPlan = null;
-
-    document.getElementById(
-      "completePanel"
-    ).classList.add("hidden");
+    document.getElementById("completePanel")
+      .classList.add("hidden");
 
     renderTimeline();
     renderPlanList();
@@ -939,13 +628,10 @@ renderPlanList();
    日別メモ
 ========================= */
 
-dailyMemoInput.addEventListener(
-  "input",
-  () => {
-    autoResizeTextarea(dailyMemoInput);
-    dailyMemoMessage.textContent = "";
-  }
-);
+dailyMemoInput.addEventListener("input", () => {
+  autoResizeTextarea(dailyMemoInput);
+  dailyMemoMessage.textContent = "";
+});
 
 saveDailyMemoButton.addEventListener(
   "click",
@@ -967,13 +653,11 @@ function loadDailyMemo(date) {
     : "表示日を選択すると、その日のメモを入力できます";
 
   dailyMemoMessage.textContent = "";
-
   autoResizeTextarea(dailyMemoInput);
 }
 
 function saveDailyMemo() {
-  const date =
-    timelineDateInput.value;
+  const date = timelineDateInput.value;
 
   if (!date) {
     dailyMemoMessage.textContent =
@@ -981,8 +665,7 @@ function saveDailyMemo() {
     return;
   }
 
-  const memo =
-    dailyMemoInput.value.trim();
+  const memo = dailyMemoInput.value.trim();
 
   if (memo) {
     dailyMemos[date] = memo;
@@ -995,70 +678,48 @@ function saveDailyMemo() {
     dailyMemos
   );
 
-  dailyMemoMessage.textContent =
-    saved
-      ? "保存しました。"
-      : "保存できませんでした。";
+  dailyMemoMessage.textContent = saved
+    ? "保存しました。"
+    : "保存できませんでした。";
 }
 
 function autoResizeTextarea(textarea) {
   textarea.style.height = "auto";
-
   textarea.style.height =
-    `${Math.max(
-      textarea.scrollHeight,
-      88
-    )}px`;
+    `${Math.max(textarea.scrollHeight, 88)}px`;
 }
 
 /* =========================
    グラフ
 ========================= */
 
-graphDateInput.addEventListener(
-  "change",
-  () => {
-    document.getElementById(
-      "graphFilterMessage"
-    ).textContent = "";
-
-    drawGraph();
-  }
-);
+graphDateInput.addEventListener("change", () => {
+  document.getElementById("graphFilterMessage").textContent =
+    "";
+  drawGraph();
+});
 
 document
   .getElementById("graphResetButton")
   .addEventListener("click", () => {
     graphDateInput.value = "";
-
-    document.getElementById(
-      "graphFilterMessage"
-    ).textContent = "";
-
+    document.getElementById("graphFilterMessage").textContent =
+      "";
     drawGraph();
   });
 
 function getGraphRecords() {
-  const selectedDate =
-    graphDateInput.value;
+  const selectedDate = graphDateInput.value;
 
-  return getSortedRecords().filter(
-    record => {
-      return (
-        !selectedDate ||
-        record.date === selectedDate
-      );
-    }
+  return getSortedRecords().filter(record =>
+    !selectedDate || record.date === selectedDate
   );
 }
 
 function drawGraph() {
-  const canvas =
-    document.getElementById("moodChart");
-
+  const canvas = document.getElementById("moodChart");
   const emptyMessage =
     document.getElementById("graphEmpty");
-
   const items = getGraphRecords();
 
   if (moodChart) {
@@ -1066,15 +727,8 @@ function drawGraph() {
     moodChart = null;
   }
 
-  canvas.classList.toggle(
-    "hidden",
-    items.length === 0
-  );
-
-  emptyMessage.classList.toggle(
-    "hidden",
-    items.length > 0
-  );
+  canvas.classList.toggle("hidden", items.length === 0);
+  emptyMessage.classList.toggle("hidden", items.length > 0);
 
   if (items.length === 0) {
     emptyMessage.textContent =
@@ -1084,45 +738,44 @@ function drawGraph() {
 
   if (typeof Chart === "undefined") {
     canvas.classList.add("hidden");
-
-    emptyMessage.classList.remove(
-      "hidden"
-    );
-
+    emptyMessage.classList.remove("hidden");
     emptyMessage.textContent =
       "グラフを読み込めませんでした。";
-
     return;
   }
+
+  const selectedDay = graphDateInput.value;
+  const firstDay = selectedDay || items[0].date;
+  const lastDay = selectedDay || items[items.length - 1].date;
+
+  const startMinute =
+    new Date(`${firstDay}T00:00:00`).getTime() / 60000;
+
+  const endMinute =
+    new Date(`${lastDay}T00:00:00`).getTime() / 60000 +
+    1440;
 
   moodChart = new Chart(canvas, {
     type: "line",
 
     data: {
-      labels: items.map(
-        record => record.time
-      ),
-
       datasets: [
         {
           label: "気分",
 
-          data: items.map(
-            record =>
-              Number(record.mood)
-          ),
+          data: items.map(record => ({
+            x: new Date(
+              `${record.date}T${getSortableTime(record.time)}:00`
+            ).getTime() / 60000,
+            y: Number(record.mood)
+          })),
 
           borderColor: "#58a98a",
+          backgroundColor: "rgba(88,169,138,0.18)",
 
-          backgroundColor:
-            "rgba(88,169,138,0.18)",
-
-          pointBackgroundColor:
-            items.map(record => {
-              return moodColor(
-                Number(record.mood)
-              );
-            }),
+          pointBackgroundColor: items.map(record =>
+            moodColor(Number(record.mood))
+          ),
 
           pointBorderColor: "#ffffff",
           pointBorderWidth: 2,
@@ -1142,32 +795,56 @@ function drawGraph() {
         y: {
           min: -3,
           max: 3,
-
           ticks: {
             stepSize: 1,
-
             callback(value) {
-              return formatMood(
-                Number(value)
-              );
+              return formatMood(Number(value));
             }
           }
         },
 
         x: {
+          type: "linear",
+          min: startMinute,
+          max: endMinute,
+
+          ticks: {
+            maxTicksLimit: 7,
+            callback(value) {
+              const date =
+                new Date(Number(value) * 60000);
+              const time =
+                `${String(date.getHours()).padStart(2, "0")}:` +
+                String(date.getMinutes()).padStart(2, "0");
+
+              return selectedDay
+                ? time
+                : `${date.getMonth() + 1}/${date.getDate()} ${time}`;
+            }
+          },
+
           title: {
             display: true,
-
-            text: graphDateInput.value
-              ? formatDate(
-                  graphDateInput.value
-                )
-              : "時刻"
+            text: selectedDay
+              ? formatDate(selectedDay)
+              : "日時"
           }
         }
       },
 
       plugins: {
+        tooltip: {
+          callbacks: {
+            title(context) {
+              const record =
+                items[context[0].dataIndex];
+              return `${formatDate(record.date)} ${record.time}`;
+            },
+            label(context) {
+              return `気分 ${formatMood(context.parsed.y)}`;
+            }
+          }
+        },
         legend: {
           display: true
         }
@@ -1182,54 +859,32 @@ function drawGraph() {
 
 document
   .getElementById("searchButton")
-  .addEventListener(
-    "click",
-    runSearch
-  );
+  .addEventListener("click", runSearch);
 
 document
   .getElementById("searchClearButton")
-  .addEventListener(
-    "click",
-    clearSearch
-  );
+  .addEventListener("click", clearSearch);
 
 document
   .getElementById("searchKeyword")
-  .addEventListener(
-    "keydown",
-    event => {
-      if (event.key === "Enter") {
-        runSearch();
-      }
-    }
-  );
+  .addEventListener("keydown", event => {
+    if (event.key === "Enter") runSearch();
+  });
 
 function runSearch() {
   const startDate =
-    document.getElementById(
-      "searchStartDate"
-    ).value;
-
+    document.getElementById("searchStartDate").value;
   const endDate =
-    document.getElementById(
-      "searchEndDate"
-    ).value;
+    document.getElementById("searchEndDate").value;
 
-  const keyword =
-    document.getElementById(
-      "searchKeyword"
-    ).value
-      .trim()
-      .toLocaleLowerCase("ja-JP");
+  const keyword = document
+    .getElementById("searchKeyword")
+    .value.trim()
+    .toLocaleLowerCase("ja-JP");
 
-  const moodValue =
-    searchMoodInput.value;
-
+  const moodValue = searchMoodInput.value;
   const searchMessage =
-    document.getElementById(
-      "searchMessage"
-    );
+    document.getElementById("searchMessage");
 
   if (!startDate || !endDate) {
     searchMessage.textContent =
@@ -1251,44 +906,34 @@ function runSearch() {
 
   searchMessage.textContent = "";
 
-  const results =
-    getSortedRecords().filter(
-      record => {
-        const dateMatches =
-          record.date >= startDate &&
-          record.date <= endDate;
+  const results = getSortedRecords().filter(record => {
+    const dateMatches =
+      record.date >= startDate &&
+      record.date <= endDate;
 
-        const keywordMatches =
-          !keyword ||
-          record.activity
-            .toLocaleLowerCase("ja-JP")
-            .includes(keyword);
+    const keywordMatches =
+      !keyword ||
+      record.activity
+        .toLocaleLowerCase("ja-JP")
+        .includes(keyword);
 
-        const moodMatches =
-          moodValue === "" ||
-          Number(record.mood) ===
-            Number(moodValue);
+    const moodMatches =
+      moodValue === "" ||
+      Number(record.mood) === Number(moodValue);
 
-        return (
-          dateMatches &&
-          keywordMatches &&
-          moodMatches
-        );
-      }
-    );
+    return dateMatches &&
+      keywordMatches &&
+      moodMatches;
+  });
 
   renderSearchResults(results);
 }
 
 function renderSearchResults(items) {
   const resultsArea =
-    document.getElementById(
-      "searchResults"
-    );
+    document.getElementById("searchResults");
 
-  document.getElementById(
-    "searchResultCount"
-  ).textContent =
+  document.getElementById("searchResultCount").textContent =
     `${items.length}件`;
 
   if (items.length === 0) {
@@ -1300,68 +945,43 @@ function renderSearchResults(items) {
     return;
   }
 
-  resultsArea.innerHTML = items
-    .map(record => {
-      return `
-        <article class="search-result-item">
-          <div class="record-head">
-            <time class="record-date">
-              ${formatDate(record.date)}
-              ${escapeHtml(record.time)}
-            </time>
+  resultsArea.innerHTML = items.map(record => `
+    <article class="search-result-item">
+      <div class="record-head">
+        <time class="record-date">
+          ${formatDate(record.date)}
+          ${escapeHtml(record.time)}
+        </time>
 
-            <span
-              class="mood-badge"
-              style="background:${moodColor(
-                Number(record.mood)
-              )}"
-            >
-              気分
-              ${formatMood(
-                Number(record.mood)
-              )}
-            </span>
-          </div>
+        <span
+          class="mood-badge"
+          style="background:${moodColor(Number(record.mood))}"
+        >
+          気分 ${formatMood(Number(record.mood))}
+        </span>
+      </div>
 
-          <p class="activity-text">
-            ${escapeHtml(record.activity)}
-          </p>
-        </article>
-      `;
-    })
-    .join("");
+      <p class="activity-text">
+        ${escapeHtml(record.activity)}
+      </p>
+    </article>
+  `).join("");
 }
 
 function clearSearch() {
-  document.getElementById(
-    "searchStartDate"
-  ).value = "";
-
-  document.getElementById(
-    "searchEndDate"
-  ).value = "";
-
-  document.getElementById(
-    "searchKeyword"
-  ).value = "";
-
+  document.getElementById("searchStartDate").value = "";
+  document.getElementById("searchEndDate").value = "";
+  document.getElementById("searchKeyword").value = "";
   searchMoodInput.value = "";
-
-  document.getElementById(
-    "searchMessage"
-  ).textContent = "";
-
+  document.getElementById("searchMessage").textContent = "";
   clearSearchResults();
 }
 
 function clearSearchResults() {
-  document.getElementById(
-    "searchResultCount"
-  ).textContent = "0件";
+  document.getElementById("searchResultCount").textContent =
+    "0件";
 
-  document.getElementById(
-    "searchResults"
-  ).innerHTML = `
+  document.getElementById("searchResults").innerHTML = `
     <p class="empty-message">
       期間と検索条件を入力してください。
     </p>
@@ -1374,180 +994,95 @@ function clearSearchResults() {
 
 document
   .getElementById("openRoutineButton")
-  .addEventListener(
-    "click",
-    openRoutineModal
-  );
+  .addEventListener("click", openRoutineModal);
 
 document
   .getElementById("closeRoutineButton")
-  .addEventListener(
-    "click",
-    closeRoutineModal
-  );
+  .addEventListener("click", closeRoutineModal);
 
 document
-  .getElementById(
-    "toggleRoutineSettingsButton"
-  )
+  .getElementById("toggleRoutineSettingsButton")
   .addEventListener("click", () => {
-    routineSettingsOpen =
-      !routineSettingsOpen;
-
+    routineSettingsOpen = !routineSettingsOpen;
     renderRoutineActivities();
   });
 
 document
   .getElementById("addRoutineButton")
-  .addEventListener(
-    "click",
-    addRoutineActivity
-  );
+  .addEventListener("click", addRoutineActivity);
 
-newRoutineInput.addEventListener(
-  "keydown",
-  event => {
-    if (event.key === "Enter") {
-      addRoutineActivity();
-    }
-  }
-);
+newRoutineInput.addEventListener("keydown", event => {
+  if (event.key === "Enter") addRoutineActivity();
+});
 
-routineModal.addEventListener(
-  "click",
-  event => {
-    if (event.target === routineModal) {
-      closeRoutineModal();
-    }
-  }
-);
-
-routineList.addEventListener(
-  "click",
-  event => {
-    const button =
-      event.target.closest(
-        "[data-routine-index]"
-      );
-
-    if (!button) {
-      return;
-    }
-
-    const index = Number(
-      button.dataset.routineIndex
-    );
-
-    activityInput.value =
-      routineActivities[index] || "";
-
+routineModal.addEventListener("click", event => {
+  if (event.target === routineModal) {
     closeRoutineModal();
-    activityInput.focus();
   }
-);
+});
 
-routineEditList.addEventListener(
-  "change",
-  event => {
-    const input =
-      event.target.closest(
-        "[data-routine-edit-index]"
-      );
+routineList.addEventListener("click", event => {
+  const button =
+    event.target.closest("[data-routine-index]");
+  if (!button) return;
 
-    if (!input) {
-      return;
-    }
+  const index = Number(button.dataset.routineIndex);
+  activityInput.value =
+    routineActivities[index] || "";
 
-    const index = Number(
-      input.dataset.routineEditIndex
-    );
+  closeRoutineModal();
+  activityInput.focus();
+});
 
-    const value =
-      input.value.trim();
+routineEditList.addEventListener("change", event => {
+  const input =
+    event.target.closest("[data-routine-edit-index]");
+  if (!input) return;
 
-    if (!value) {
-      renderRoutineActivities();
-      return;
-    }
+  const index =
+    Number(input.dataset.routineEditIndex);
+  const value = input.value.trim();
 
-    routineActivities[index] = value;
-
-    saveJson(
-      ROUTINE_STORAGE_KEY,
-      routineActivities
-    );
-
+  if (!value) {
     renderRoutineActivities();
+    return;
   }
-);
 
-routineEditList.addEventListener(
-  "click",
-  event => {
-    const button =
-      event.target.closest(
-        "[data-routine-delete-index]"
-      );
+  routineActivities[index] = value;
+  saveJson(ROUTINE_STORAGE_KEY, routineActivities);
+  renderRoutineActivities();
+});
 
-    if (!button) {
-      return;
-    }
+routineEditList.addEventListener("click", event => {
+  const button =
+    event.target.closest("[data-routine-delete-index]");
+  if (!button) return;
 
-    const index = Number(
-      button.dataset.routineDeleteIndex
-    );
+  const index =
+    Number(button.dataset.routineDeleteIndex);
 
-    routineActivities.splice(
-      index,
-      1
-    );
-
-    saveJson(
-      ROUTINE_STORAGE_KEY,
-      routineActivities
-    );
-
-    renderRoutineActivities();
-  }
-);
+  routineActivities.splice(index, 1);
+  saveJson(ROUTINE_STORAGE_KEY, routineActivities);
+  renderRoutineActivities();
+});
 
 function openRoutineModal() {
   routineSettingsOpen = false;
-
   renderRoutineActivities();
 
-  routineModal.classList.remove(
-    "hidden"
-  );
-
-  routineModal.setAttribute(
-    "aria-hidden",
-    "false"
-  );
-
-  document.body.classList.add(
-    "modal-open"
-  );
+  routineModal.classList.remove("hidden");
+  routineModal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-open");
 }
 
 function closeRoutineModal() {
-  routineModal.classList.add(
-    "hidden"
-  );
-
-  routineModal.setAttribute(
-    "aria-hidden",
-    "true"
-  );
-
-  document.body.classList.remove(
-    "modal-open"
-  );
+  routineModal.classList.add("hidden");
+  routineModal.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("modal-open");
 }
 
 function addRoutineActivity() {
-  const value =
-    newRoutineInput.value.trim();
+  const value = newRoutineInput.value.trim();
 
   if (!value) {
     newRoutineInput.focus();
@@ -1555,14 +1090,8 @@ function addRoutineActivity() {
   }
 
   routineActivities.push(value);
-
   newRoutineInput.value = "";
-
-  saveJson(
-    ROUTINE_STORAGE_KEY,
-    routineActivities
-  );
-
+  saveJson(ROUTINE_STORAGE_KEY, routineActivities);
   renderRoutineActivities();
   newRoutineInput.focus();
 }
@@ -1575,20 +1104,17 @@ function renderRoutineActivities() {
       </p>
     `;
   } else {
-    routineList.innerHTML =
-      routineActivities
-        .map((activity, index) => {
-          return `
-            <button
-              type="button"
-              class="routine-choice"
-              data-routine-index="${index}"
-            >
-              ${escapeHtml(activity)}
-            </button>
-          `;
-        })
-        .join("");
+    routineList.innerHTML = routineActivities
+      .map((activity, index) => `
+        <button
+          type="button"
+          class="routine-choice"
+          data-routine-index="${index}"
+        >
+          ${escapeHtml(activity)}
+        </button>
+      `)
+      .join("");
   }
 
   routineSettings.classList.toggle(
@@ -1598,33 +1124,28 @@ function renderRoutineActivities() {
 
   document.getElementById(
     "toggleRoutineSettingsButton"
-  ).textContent =
-    routineSettingsOpen
-      ? "設定を閉じる"
-      : "設定";
+  ).textContent = routineSettingsOpen
+    ? "設定を閉じる"
+    : "設定";
 
-  routineEditList.innerHTML =
-    routineActivities
-      .map((activity, index) => {
-        return `
-          <div class="routine-edit-row">
-            <input
-              type="text"
-              maxlength="100"
-              value="${escapeHtml(activity)}"
-              data-routine-edit-index="${index}"
-            >
-
-            <button
-              type="button"
-              data-routine-delete-index="${index}"
-            >
-              削除
-            </button>
-          </div>
-        `;
-      })
-      .join("");
+  routineEditList.innerHTML = routineActivities
+    .map((activity, index) => `
+      <div class="routine-edit-row">
+        <input
+          type="text"
+          maxlength="100"
+          value="${escapeHtml(activity)}"
+          data-routine-edit-index="${index}"
+        >
+        <button
+          type="button"
+          data-routine-delete-index="${index}"
+        >
+          削除
+        </button>
+      </div>
+    `)
+    .join("");
 }
 
 /* =========================
@@ -1632,89 +1153,53 @@ function renderRoutineActivities() {
 ========================= */
 
 document
-  .getElementById(
-    "timelinePrintButton"
-  )
-  .addEventListener(
-    "click",
-    printTimeline
-  );
+  .getElementById("timelinePrintButton")
+  .addEventListener("click", printTimeline);
 
 document
   .getElementById("graphPrintButton")
   .addEventListener("click", () => {
-    document.body.classList.add(
-      "print-graph"
-    );
-
-    setTimeout(() => {
-      window.print();
-    }, 100);
+    document.body.classList.add("print-graph");
+    setTimeout(() => window.print(), 100);
   });
 
-window.addEventListener(
-  "afterprint",
-  () => {
-    document.body.classList.remove(
-      "print-timeline",
-      "print-graph"
-    );
-  }
-);
+window.addEventListener("afterprint", () => {
+  document.body.classList.remove(
+    "print-timeline",
+    "print-graph"
+  );
+});
 
 function printTimeline() {
   buildTimelinePrintArea();
-
-  document.body.classList.add(
-    "print-timeline"
-  );
-
-  setTimeout(() => {
-    window.print();
-  }, 100);
+  document.body.classList.add("print-timeline");
+  setTimeout(() => window.print(), 100);
 }
 
 function buildTimelinePrintArea() {
   const printArea =
-    document.getElementById(
-      "timelinePrintPages"
-    );
-
+    document.getElementById("timelinePrintPages");
   const items = getTimelineRecords();
-
-  const selectedDate =
-    timelineDateInput.value;
-
+  const selectedDate = timelineDateInput.value;
   const memo = selectedDate
     ? dailyMemos[selectedDate] || ""
     : "";
 
   const recordsHtml = items.length
-    ? items
-        .map(record => {
-          return `
-            <article class="timeline-print-item">
-              <div class="timeline-print-record-head">
-                <span>
-                  ${formatDate(record.date)}
-                  ${escapeHtml(record.time)}
-                </span>
-
-                <span>
-                  気分
-                  ${formatMood(
-                    Number(record.mood)
-                  )}
-                </span>
-              </div>
-
-              <p>
-                ${escapeHtml(record.activity)}
-              </p>
-            </article>
-          `;
-        })
-        .join("")
+    ? items.map(record => `
+        <article class="timeline-print-item">
+          <div class="timeline-print-record-head">
+            <span>
+              ${formatDate(record.date)}
+              ${escapeHtml(record.time)}
+            </span>
+            <span>
+              気分 ${formatMood(Number(record.mood))}
+            </span>
+          </div>
+          <p>${escapeHtml(record.activity)}</p>
+        </article>
+      `).join("")
     : `
         <p class="timeline-print-empty">
           この日の記録はありません。
@@ -1725,7 +1210,6 @@ function buildTimelinePrintArea() {
     ? `
         <section class="timeline-print-memos">
           <h2>メモ</h2>
-
           <p>${escapeHtml(memo)}</p>
         </section>
       `
@@ -1737,11 +1221,9 @@ function buildTimelinePrintArea() {
         <h2>活動記録表</h2>
         <span>${items.length}件</span>
       </div>
-
       <div class="timeline-print-records">
         ${recordsHtml}
       </div>
-
       ${memoHtml}
     </section>
   `;
@@ -1754,14 +1236,9 @@ function buildTimelinePrintArea() {
 document
   .querySelectorAll(".nav-button")
   .forEach(button => {
-    button.addEventListener(
-      "click",
-      () => {
-        showPage(
-          button.dataset.page
-        );
-      }
-    );
+    button.addEventListener("click", () => {
+      showPage(button.dataset.page);
+    });
   });
 
 function showPage(pageId) {
@@ -1769,23 +1246,21 @@ function showPage(pageId) {
     renderPlanList();
   }
 
-  document
-    .querySelectorAll(".page")
-    .forEach(page => {
-      page.classList.toggle(
-        "active",
-        page.id === pageId
-      );
-    });
+  document.querySelectorAll(".page").forEach(page => {
+    page.classList.toggle(
+      "active",
+      page.id === pageId
+    );
+  });
 
-  document
-    .querySelectorAll(".nav-button")
-    .forEach(button => {
+  document.querySelectorAll(".nav-button").forEach(
+    button => {
       button.classList.toggle(
         "active",
         button.dataset.page === pageId
       );
-    });
+    }
+  );
 
   window.scrollTo({
     top: 0,
@@ -1794,16 +1269,11 @@ function showPage(pageId) {
 
   if (pageId === "timelinePage") {
     renderTimeline();
-
-    loadDailyMemo(
-      timelineDateInput.value
-    );
+    loadDailyMemo(timelineDateInput.value);
   }
 
   if (pageId === "graphPage") {
-    requestAnimationFrame(
-      drawGraph
-    );
+    requestAnimationFrame(drawGraph);
   }
 }
 
@@ -1812,58 +1282,34 @@ function showPage(pageId) {
 ========================= */
 
 function getSortedRecords() {
-  return [...records].sort(
-    (first, second) => {
-      const firstValue =
-        `${first.date}T${getSortableTime(
-          first.time
-        )}`;
-
-      const secondValue =
-        `${second.date}T${getSortableTime(
-          second.time
-        )}`;
-
-      return firstValue.localeCompare(
-        secondValue
-      );
-    }
-  );
+  return [...records].sort((first, second) => {
+    const firstValue =
+      `${first.date}T${getSortableTime(first.time)}`;
+    const secondValue =
+      `${second.date}T${getSortableTime(second.time)}`;
+    return firstValue.localeCompare(secondValue);
+  });
 }
 
 function setCurrentDateTime() {
   const now = new Date();
 
-  dateInput.value =
-    formatInputDate(now);
-
+  dateInput.value = formatInputDate(now);
   timeInput.value =
-    `${String(now.getHours()).padStart(
-      2,
-      "0"
-    )}:` +
-    String(now.getMinutes()).padStart(
-      2,
-      "0"
-    );
+    `${String(now.getHours()).padStart(2, "0")}:` +
+    String(now.getMinutes()).padStart(2, "0");
 }
 
 function getToday() {
-  return formatInputDate(
-    new Date()
-  );
+  return formatInputDate(new Date());
 }
 
 function formatInputDate(date) {
   const year = date.getFullYear();
-
-  const month = String(
-    date.getMonth() + 1
-  ).padStart(2, "0");
-
-  const day = String(
-    date.getDate()
-  ).padStart(2, "0");
+  const month =
+    String(date.getMonth() + 1).padStart(2, "0");
+  const day =
+    String(date.getDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
 }
@@ -1873,36 +1319,26 @@ function normalizeTypedTime(value) {
     .trim()
     .replace(/\s/g, "");
 
-  if (!text) {
-    return null;
-  }
+  if (!text) return null;
 
   let hourText = "";
   let minuteText = "";
 
   if (text.includes(":")) {
     const parts = text.split(":");
-
-    if (parts.length !== 2) {
-      return null;
-    }
+    if (parts.length !== 2) return null;
 
     hourText = parts[0];
     minuteText = parts[1];
   } else {
-    const numbers =
-      text.replace(/\D/g, "");
+    const numbers = text.replace(/\D/g, "");
 
-    if (
-      numbers.length === 1 ||
-      numbers.length === 2
-    ) {
+    if (numbers.length === 1 ||
+        numbers.length === 2) {
       hourText = numbers;
       minuteText = "00";
-    } else if (
-      numbers.length === 3 ||
-      numbers.length === 4
-    ) {
+    } else if (numbers.length === 3 ||
+               numbers.length === 4) {
       hourText = numbers.slice(0, -2);
       minuteText = numbers.slice(-2);
     } else {
@@ -1930,52 +1366,31 @@ function normalizeTypedTime(value) {
   }
 
   return (
-    `${String(hour).padStart(
-      2,
-      "0"
-    )}:` +
-    String(minute).padStart(
-      2,
-      "0"
-    )
+    `${String(hour).padStart(2, "0")}:` +
+    String(minute).padStart(2, "0")
   );
 }
 
 function getSortableTime(value) {
-  return (
-    normalizeTypedTime(value) ||
-    "00:00"
-  );
+  return normalizeTypedTime(value) || "00:00";
 }
 
 function formatDate(value) {
-  if (!value) {
-    return "";
-  }
+  if (!value) return "";
 
-  const date =
-    new Date(`${value}T00:00:00`);
+  const date = new Date(`${value}T00:00:00`);
 
-  return new Intl.DateTimeFormat(
-    "ja-JP",
-    {
-      year: "numeric",
-      month: "numeric",
-      day: "numeric",
-      weekday: "short"
-    }
-  ).format(date);
+  return new Intl.DateTimeFormat("ja-JP", {
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    weekday: "short"
+  }).format(date);
 }
 
 function formatMood(mood) {
-  if (mood > 0) {
-    return `＋${mood}`;
-  }
-
-  return String(mood).replace(
-    "-",
-    "−"
-  );
+  if (mood > 0) return `＋${mood}`;
+  return String(mood).replace("-", "−");
 }
 
 function moodColor(mood) {
@@ -1989,54 +1404,39 @@ function moodColor(mood) {
     "#238d59"
   ];
 
-  return colors[mood + 3] ||
-    "#809087";
+  return colors[mood + 3] || "#809087";
 }
 
 function createRecordId() {
   return (
     Date.now().toString() +
     "-" +
-    Math.random()
-      .toString(16)
-      .slice(2)
+    Math.random().toString(16).slice(2)
   );
 }
 
 function loadJson(key, defaultValue) {
   try {
-    const saved =
-      localStorage.getItem(key);
-
-    if (!saved) {
-      return defaultValue;
-    }
-
-    return JSON.parse(saved);
+    const saved = localStorage.getItem(key);
+    return saved ? JSON.parse(saved) : defaultValue;
   } catch (error) {
     console.error(
       `${key}の読み込みに失敗しました。`,
       error
     );
-
     return defaultValue;
   }
 }
 
 function saveJson(key, value) {
   try {
-    localStorage.setItem(
-      key,
-      JSON.stringify(value)
-    );
-
+    localStorage.setItem(key, JSON.stringify(value));
     return true;
   } catch (error) {
     console.error(
       `${key}の保存に失敗しました。`,
       error
     );
-
     return false;
   }
 }
@@ -2052,18 +1452,12 @@ function escapeHtml(value) {
 
   return String(value).replace(
     /[&<>'"]/g,
-    character => {
-      return replacements[character];
-    }
+    character => replacements[character]
   );
 }
 
-/* HTML内のonclickから使用 */
-
 window.editRecord = editRecord;
 window.deleteRecord = deleteRecord;
-
-/* 全設定が終わってから初期化 */
 
 initializeApp();
 
@@ -2071,7 +1465,6 @@ function initializeApp() {
   setCurrentDateTime();
 
   const today = getToday();
-
   timelineDateInput.value = today;
   graphDateInput.value = today;
 
