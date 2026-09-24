@@ -1241,6 +1241,16 @@ function buildDailyPrintPage(date) {
   );
 
   const middle = Math.ceil(items.length / 2);
+  const perColumn = Math.max(
+    middle,
+    items.length - middle
+  );
+
+  const recordFont = Math.max(
+    5.5,
+    Math.min(8, 80 / Math.max(10, perColumn))
+  );
+
   const memo = dailyMemos[date] || "";
 
   const column = part => part.length
@@ -1258,7 +1268,10 @@ function buildDailyPrintPage(date) {
     : '<p class="daily-print-empty">記録なし</p>';
 
   return `
-    <section class="daily-print-page">
+    <section
+      class="daily-print-page"
+      style="--daily-record-font:${recordFont}pt"
+    >
       <h1>
         ${escapeHtml(date.replace(/-/g, "/"))}
         活動記録表
@@ -1271,14 +1284,12 @@ function buildDailyPrintPage(date) {
 
       <div class="daily-print-columns">
         <section class="daily-print-column">
-          <h2>活動記録表<br>前半</h2>
           <div class="daily-print-list">
             ${column(items.slice(0, middle))}
           </div>
         </section>
 
         <section class="daily-print-column">
-          <h2>活動記録表<br>後半</h2>
           <div class="daily-print-list">
             ${column(items.slice(middle))}
           </div>
