@@ -1821,7 +1821,7 @@ input[type="date"]::-webkit-date-and-time-value {
   .daily-print-graph svg text { fill: #333; font-size: 12px; }
   .daily-print-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6mm; min-height: 0; }
   .daily-print-column { min-width: 0; min-height: 0; overflow: hidden; border: 1px solid #777; padding: 2mm 3mm; }
-  .daily-print-column:first-child { border-right: 2px solid #222; }
+  .daily-print-column:first-child { border-right: 1px solid #777; }
   .daily-print-list { font-size: var(--daily-record-font, 8pt); line-height: 1.15; }
   .daily-print-record { padding: 0.8mm 0; border-bottom: 1px solid #ccc; break-inside: avoid; }
   .daily-print-record-heading { display: flex; justify-content: space-between; gap: 2mm; }
