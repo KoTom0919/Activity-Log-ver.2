@@ -315,7 +315,7 @@ function renderTimeline() {
           data-plan-complete="${escapeHtml(plan.id)}"
           data-date="${date}"
         >
-          編集・完了
+          完了
         </button>
       </div>
     </article>
@@ -551,8 +551,9 @@ function completePlan(id, date) {
 
   document.getElementById("completeDateLabel").textContent =
     `${formatDate(date)} ${plan.time}`;
-  document.getElementById("completeActivity").value =
+  document.getElementById("completeActivity").textContent =
     plan.activity;
+  setCompleteCurrentTime();
   document.getElementById("completeMood").value = "";
   document.getElementById("completeMessage").textContent = "";
 
@@ -572,20 +573,43 @@ document
       .classList.add("hidden");
   });
 
+const completeTimeInput = document.getElementById("completeTime");
+
+function setCompleteCurrentTime() {
+  const now = new Date();
+  completeTimeInput.value =
+    `${String(now.getHours()).padStart(2, "0")}:` +
+    String(now.getMinutes()).padStart(2, "0");
+}
+
+document
+  .getElementById("completeNowButton")
+  .addEventListener("click", setCompleteCurrentTime);
+
+completeTimeInput.addEventListener("input", () => {
+  completeTimeInput.value = completeTimeInput.value
+    .replace(/[^0-9:]/g, "")
+    .slice(0, 5);
+});
+
+completeTimeInput.addEventListener("blur", () => {
+  const normalized = normalizeTypedTime(completeTimeInput.value);
+  if (normalized) completeTimeInput.value = normalized;
+});
+
 document
   .getElementById("finishPlanButton")
   .addEventListener("click", () => {
     if (!completingPlan) return;
 
-    const activity = document
-      .getElementById("completeActivity")
-      .value.trim();
+    const completionTime =
+      normalizeTypedTime(completeTimeInput.value);
     const mood =
       document.getElementById("completeMood").value;
 
-    if (!activity || mood === "") {
+    if (!completionTime || mood === "") {
       document.getElementById("completeMessage").textContent =
-        "活動内容と気分を入力してください。";
+        "正しい完了時刻と気分を入力してください。";
       return;
     }
 
@@ -600,8 +624,8 @@ document
       id: createRecordId(),
       planId: plan.id,
       date,
-      time: plan.time,
-      activity,
+      time: completionTime,
+      activity: plan.activity,
       mood: Number(mood)
     };
 
@@ -1241,10 +1265,10 @@ function buildDailyPrintPage(date) {
   );
 
   const middle = items.length <= 10
-  ? items.length
-  : items.length <= 20
-    ? 10
-    : Math.ceil(items.length / 2);
+    ? items.length
+    : items.length <= 20
+      ? 10
+      : Math.ceil(items.length / 2);
 
   const perColumn = Math.max(
     middle,

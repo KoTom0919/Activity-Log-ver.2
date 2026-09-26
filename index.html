@@ -235,12 +235,25 @@
         <h3>予定を完了</h3>
         <p id="completeDateLabel"></p>
 
-        <label for="completeActivity">活動内容</label>
-        <textarea
-          id="completeActivity"
-          rows="3"
-          maxlength="300"
-        ></textarea>
+        <p id="completeActivity" class="complete-activity"></p>
+
+        <label for="completeTime">完了時刻</label>
+        <div class="time-row">
+          <input
+            id="completeTime"
+            type="text"
+            inputmode="numeric"
+            placeholder="例：14:30"
+            maxlength="5"
+          >
+          <button
+            id="completeNowButton"
+            class="sub-button"
+            type="button"
+          >
+            現在時刻
+          </button>
+        </div>
 
         <label for="completeMood">気分</label>
         <select id="completeMood">
