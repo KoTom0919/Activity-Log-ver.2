@@ -815,6 +815,12 @@ function drawGraph() {
       responsive: true,
       maintainAspectRatio: false,
 
+      interaction: {
+        mode: "nearest",
+        intersect: false,
+        axis: "xy"
+      },
+
       scales: {
         y: {
           min: -3,
@@ -858,17 +864,25 @@ function drawGraph() {
 
       plugins: {
         tooltip: {
+          displayColors: false,
+
           callbacks: {
             title(context) {
               const record =
                 items[context[0].dataIndex];
               return `${formatDate(record.date)} ${record.time}`;
             },
+
             label(context) {
-              return `気分 ${formatMood(context.parsed.y)}`;
+              const record = items[context.dataIndex];
+              return [
+                `活動内容：${record.activity}`,
+                `気分：${formatMood(context.parsed.y)}`
+              ];
             }
           }
         },
+
         legend: {
           display: true
         }
