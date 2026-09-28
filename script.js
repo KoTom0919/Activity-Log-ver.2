@@ -1278,10 +1278,11 @@ function buildDailyPrintPage(date) {
     record => record.date === date
   );
 
-const middle = items.length <= 15
+
+  const middle = items.length <= 20
   ? items.length
-  : items.length <= 30
-    ? 15
+  : items.length <= 40
+    ? 20
     : Math.ceil(items.length / 2);
 
   const perColumn = Math.max(

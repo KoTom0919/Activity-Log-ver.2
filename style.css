@@ -605,7 +605,7 @@ fieldset legend {
 
   .daily-print-page {
   display: grid;
-  grid-template-rows: 9mm 60mm 126mm 43mm;
+  grid-template-rows: 9mm 60mm 164mm 25mm;
   gap: 3mm;
   width: 194mm;
   height: 268mm;
