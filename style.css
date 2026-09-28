@@ -1729,3 +1729,10 @@ input[type="date"]::-webkit-date-and-time-value {
     line-height: 1.2;
   }
 }
+.transfer-card {
+  margin-top: 16px;
+}
+
+.transfer-card p {
+  line-height: 1.6;
+}

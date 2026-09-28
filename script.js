@@ -1694,6 +1694,150 @@ function escapeHtml(value) {
   );
 }
 
+/* 別の端末へのデータ移行 */
+const transferKeys = [
+  STORAGE_KEY,
+  ROUTINE_STORAGE_KEY,
+  DAILY_MEMO_STORAGE_KEY,
+  PLAN_STORAGE_KEY
+];
+
+const importDataFile =
+  document.getElementById("importDataFile");
+const transferMessage =
+  document.getElementById("transferMessage");
+
+document
+  .getElementById("exportDataButton")
+  .addEventListener("click", () => {
+    const backup = {
+      app: "activity-log",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      data: {
+        [STORAGE_KEY]: records,
+        [ROUTINE_STORAGE_KEY]: routineActivities,
+        [DAILY_MEMO_STORAGE_KEY]: dailyMemos,
+        [PLAN_STORAGE_KEY]: plans
+      }
+    };
+
+    const blob = new Blob(
+      [JSON.stringify(backup, null, 2)],
+      { type: "application/json" }
+    );
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download =
+      `活動記録バックアップ_${getToday()}.json`;
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    transferMessage.textContent =
+      "バックアップファイルを書き出しました。";
+  });
+
+document
+  .getElementById("importDataButton")
+  .addEventListener("click", () => {
+    importDataFile.click();
+  });
+
+importDataFile.addEventListener("change", async () => {
+  const file = importDataFile.files?.[0];
+  if (!file) return;
+
+  importDataFile.value = "";
+
+  try {
+    const backup = JSON.parse(await file.text());
+    const data = backup?.data;
+
+    if (
+      backup?.app !== "activity-log" ||
+      backup.version !== 1 ||
+      !data ||
+      !Array.isArray(data[STORAGE_KEY]) ||
+      !Array.isArray(data[ROUTINE_STORAGE_KEY]) ||
+      !Array.isArray(data[PLAN_STORAGE_KEY]) ||
+      !data[DAILY_MEMO_STORAGE_KEY] ||
+      typeof data[DAILY_MEMO_STORAGE_KEY] !== "object" ||
+      Array.isArray(data[DAILY_MEMO_STORAGE_KEY]) ||
+      !data[STORAGE_KEY].every(record =>
+        record &&
+        typeof record.id === "string" &&
+        /^\d{4}-\d{2}-\d{2}$/.test(record.date) &&
+        normalizeTypedTime(record.time) &&
+        typeof record.activity === "string" &&
+        Number.isInteger(Number(record.mood)) &&
+        Number(record.mood) >= -3 &&
+        Number(record.mood) <= 3
+      ) ||
+      !data[ROUTINE_STORAGE_KEY].every(
+        value => typeof value === "string"
+      ) ||
+      !data[PLAN_STORAGE_KEY].every(plan =>
+        plan &&
+        typeof plan.id === "string" &&
+        typeof plan.activity === "string" &&
+        /^\d{4}-\d{2}-\d{2}$/.test(plan.date) &&
+        normalizeTypedTime(plan.time) &&
+        ["once", "daily", "weekly"].includes(plan.repeat)
+      ) ||
+      !Object.values(
+        data[DAILY_MEMO_STORAGE_KEY]
+      ).every(value => typeof value === "string")
+    ) {
+      throw new Error(
+        "活動記録のバックアップファイルを選んでください。"
+      );
+    }
+
+    if (!window.confirm(
+      "このスマホの活動記録・予定・定期的な活動・日別メモを、ファイルの内容で置き換えます。続けますか？"
+    )) {
+      return;
+    }
+
+    const previous = Object.fromEntries(
+      transferKeys.map(key => [
+        key,
+        localStorage.getItem(key)
+      ])
+    );
+
+    try {
+      transferKeys.forEach(key => {
+        localStorage.setItem(
+          key,
+          JSON.stringify(data[key])
+        );
+      });
+    } catch (error) {
+      transferKeys.forEach(key => {
+        if (previous[key] === null) {
+          localStorage.removeItem(key);
+        } else {
+          localStorage.setItem(key, previous[key]);
+        }
+      });
+      throw error;
+    }
+
+    window.location.reload();
+  } catch (error) {
+    transferMessage.textContent =
+      error instanceof SyntaxError
+        ? "JSONファイルを読み取れませんでした。"
+        : error.message || "読み込みに失敗しました。";
+  }
+});
+
 window.editRecord = editRecord;
 window.deleteRecord = deleteRecord;
 

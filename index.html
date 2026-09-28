@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#58a98a">
   <title>活動記録表</title>
-  <link rel="stylesheet" href="style.css?v=27">
+  <link rel="stylesheet" href="style.css?v=28">
 </head>
 
 <body>
@@ -105,6 +105,45 @@
             記録する
           </button>
         </div>
+      </div>
+
+      <div class="card transfer-card">
+        <h2>別のスマホへデータを移す</h2>
+        <p>
+          このスマホでデータを書き出し、別のスマホでファイルを読み込んでください。
+          活動記録・予定・定期的な活動・日別メモをまとめて移します。
+        </p>
+
+        <div class="form-actions">
+          <button
+            id="exportDataButton"
+            class="secondary-button"
+            type="button"
+          >
+            データを書き出す
+          </button>
+          <button
+            id="importDataButton"
+            class="primary-button"
+            type="button"
+          >
+            データを読み込む
+          </button>
+        </div>
+
+        <input
+          id="importDataFile"
+          type="file"
+          accept=".json,application/json"
+          class="hidden"
+          aria-label="活動記録のバックアップファイル"
+        >
+
+        <p
+          id="transferMessage"
+          class="message"
+          aria-live="polite"
+        ></p>
       </div>
     </section>
 
@@ -576,6 +615,6 @@
   </nav>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="script.js?v=26"></script>
+  <script src="script.js?v=27"></script>
 </body>
 </html>
