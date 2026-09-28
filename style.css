@@ -583,252 +583,146 @@ fieldset legend {
 @media print {
   @page {
     size: A4 portrait;
-    margin: 7mm;
+    margin: 8mm;
   }
 
-  body {
+  body.print-daily {
+    margin: 0;
     min-width: 0;
-    color: #111;
     background: white;
   }
 
-  .app-header,
-  .bottom-nav,
-  .modal-backdrop,
-  .date-filter,
-  .activity-search,
-  .record-actions,
-  .danger-button {
+  body.print-daily > .app-header,
+  body.print-daily > main,
+  body.print-daily > .bottom-nav,
+  body.print-daily > #printDialog {
     display: none !important;
   }
 
-  main {
-    width: 100%;
-    min-height: 0;
-    padding: 0;
-  }
-
-  .page {
-    display: none !important;
-  }
-
-  body.print-timeline #timelinePage {
+  body.print-daily > #dailyPrintRoot {
     display: block !important;
   }
 
-  body.print-graph #graphPage {
-    display: block !important;
-  }
-
-  body.print-timeline
-  #timelinePage
-  > .section-heading,
-
-  body.print-timeline
-  #timelinePage
-  > .timeline,
-
-  body.print-timeline
-  #timelinePage
-  > .danger-button {
-    display: none !important;
-  }
-
-  body.print-timeline
-  .timeline-print-pages {
-    display: block !important;
-  }
-
-  /* A4を左右2列に分割 */
-
-  .timeline-print-flow {
-    width: 100%;
-    column-count: 2;
-    column-width: auto;
-    column-gap: 3mm;
-    column-fill: auto;
-    column-rule: 0.2mm solid #ddd;
-  }
-
-  .timeline-print-item {
-    display: inline-block;
-    width: 100%;
-    margin: 0 0 1mm;
-    padding: 1.5mm 1.8mm;
+  .daily-print-page {
+    display: grid;
+    grid-template-rows: 9mm 60mm 140mm 29mm;
+    gap: 3mm;
+    width: 194mm;
+    height: 268mm;
+    margin: 0 auto;
     overflow: hidden;
-    vertical-align: top;
-    border: 0.25mm solid #aaa;
-    border-radius: 1.2mm;
-    break-inside: avoid;
-    page-break-inside: avoid;
-    -webkit-column-break-inside: avoid;
+    color: #151515;
+    background: white;
+    break-after: page;
+    page-break-after: always;
+    box-sizing: border-box;
   }
 
-  .timeline-print-page:last-child {
+  .daily-print-page:last-child {
     break-after: auto;
     page-break-after: auto;
   }
 
-  .timeline-print-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 7mm;
-    border-bottom: 0.3mm solid #777;
-  }
-
-  .timeline-print-header h2 {
+  .daily-print-page h1 {
     margin: 0;
-    font-size: 11pt;
-  }
-
-  .timeline-print-header span {
-    font-size: 7.5pt;
-  }
-
-  .timeline-print-document {
-    width: 100%;
-    margin: 0;
-    padding: 0;
-  }
-
-  .timeline-print-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 7mm;
-    margin-bottom: 2mm;
-    border-bottom: 0.3mm solid #777;
-  }
-
-  .timeline-print-header h2 {
-    margin: 0;
-    font-size: 11pt;
-  }
-
-  .timeline-print-header span {
-    font-size: 7.5pt;
-  }
-
-  .timeline-print-flow {
-    width: 100%;
-    column-count: 2;
-    column-gap: 3mm;
-    column-fill: auto;
-    column-rule: 0.2mm solid #ddd;
-  }
-
-  .timeline-print-item {
-    display: inline-block;
-    width: 100%;
-    margin: 0 0 1mm;
-    padding: 1.5mm 1.8mm;
-    overflow: hidden;
-    vertical-align: top;
-    border: 0.25mm solid #aaa;
-    border-radius: 1.2mm;
-    break-inside: avoid;
-    page-break-inside: avoid;
-    -webkit-column-break-inside: avoid;
-  }
-
-  .timeline-print-record-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1mm;
-    font-size: 7pt;
-    font-weight: 700;
-    line-height: 1.15;
-  }
-
-  .timeline-print-record-head span {
-    flex: 0 0 auto;
-  }
-
-  .timeline-print-item p {
-    margin: 1mm 0 0;
-    font-size: 7.5pt;
-    line-height: 1.25;
-    overflow-wrap: anywhere;
-    white-space: pre-wrap;
-  }
-
-  .timeline-print-empty {
-    margin: 20mm 0;
-    color: #555;
     text-align: center;
-    font-size: 10pt;
+    font-size: 15pt;
+    font-weight: 500;
+    line-height: 9mm;
   }
 
-  .timeline-print-item {
+  .daily-print-graph {
+    border: 1px solid #777;
+    padding: 2mm 4mm;
+    overflow: hidden;
+  }
+
+  .daily-print-graph h2 {
+    margin: 0;
+    text-align: center;
+    font-size: 11pt;
+    line-height: 5mm;
+  }
+
+  .daily-print-graph svg {
+    display: block;
     width: 100%;
-    height: 22mm;
+    height: 49mm;
+  }
+
+  .daily-print-graph svg text {
+    fill: #333;
+    font-size: 12px;
+  }
+
+  .daily-print-columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 6mm;
+    min-height: 0;
+  }
+
+  .daily-print-column {
     min-width: 0;
     min-height: 0;
-    padding: 1.3mm 1.7mm;
     overflow: hidden;
-    border: 0.25mm solid #aaa;
-    border-radius: 1.2mm;
-    break-inside: avoid;
-    page-break-inside: avoid;
+    border: 1px solid #777;
+    padding: 2mm 3mm;
   }
 
-  .timeline-print-item p {
-    display: -webkit-box;
-    margin: 1mm 0 0;
-    overflow: hidden;
-    font-size: 7.5pt;
-    line-height: 1.2;
-    overflow-wrap: anywhere;
-    white-space: pre-wrap;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
+  .daily-print-column:first-child {
+    border-right: 1px solid #777;
   }
 
-  .timeline-print-record-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1mm;
-    font-size: 6.5pt;
-    font-weight: 700;
-    line-height: 1.1;
-  }
-
-  .timeline-print-record-head span {
-    flex: 0 0 auto;
-  }
-
-  .timeline-print-item p {
-    display: -webkit-box;
-    margin: 0.7mm 0 0;
-    overflow: hidden;
-    font-size: 7pt;
+  .daily-print-list {
+    font-size: var(--daily-record-font, 8pt);
     line-height: 1.15;
-    overflow-wrap: anywhere;
-    white-space: pre-wrap;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
   }
 
-  .timeline-print-empty {
-    margin: 20mm 0;
+  .daily-print-record {
+    box-sizing: border-box;
+    min-height: 9mm;
+    padding: 0.5mm 0;
+    border-bottom: 1px solid #ccc;
+    break-inside: avoid;
+  }
+
+  .daily-print-record-heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 2mm;
+  }
+
+  .daily-print-record p {
+    margin: 1mm 0 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .daily-print-empty {
     color: #555;
     text-align: center;
-    font-size: 10pt;
   }
 
-  .graph-card {
-    padding: 0;
-    border: 0;
-    box-shadow: none;
+  .daily-print-memo {
+    min-height: 0;
+    overflow: hidden;
+    border: 1px solid #777;
+    padding: 2mm 3mm;
   }
 
-  .canvas-wrap,
-  #moodChart {
-    width: 100% !important;
-    height: 520px !important;
+  .daily-print-memo h2 {
+    margin: 0 0 1mm;
+    text-align: center;
+    font-size: 11pt;
+  }
+
+  .daily-print-memo p {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: 8pt;
+    line-height: 1.2;
   }
 }
 
