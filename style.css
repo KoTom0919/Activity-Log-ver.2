@@ -604,19 +604,21 @@ fieldset legend {
   }
 
   .daily-print-page {
-    display: grid;
-    grid-template-rows: 9mm 60mm 140mm 29mm;
-    gap: 3mm;
-    width: 194mm;
-    height: 268mm;
-    margin: 0 auto;
-    overflow: hidden;
-    color: #151515;
-    background: white;
-    break-after: page;
-    page-break-after: always;
-    box-sizing: border-box;
-  }
+  display: grid;
+  grid-template-rows: 9mm 60mm 126mm 43mm;
+  gap: 3mm;
+  width: 194mm;
+  height: 268mm;
+  margin: 0 auto;
+  overflow: hidden;
+  color: #151515;
+  background: white;
+  break-after: page;
+  page-break-after: always;
+  box-sizing: border-box;
+}
+
+
 
   .daily-print-page:last-child {
     break-after: auto;
@@ -680,12 +682,12 @@ fieldset legend {
   }
 
   .daily-print-record {
-    box-sizing: border-box;
-    min-height: 9mm;
-    padding: 0.5mm 0;
-    border-bottom: 1px solid #ccc;
-    break-inside: avoid;
-  }
+  box-sizing: border-box;
+  min-height: 7.5mm;
+  padding: 0.5mm 0;
+  border-bottom: 1px solid #ccc;
+  break-inside: avoid;
+}
 
   .daily-print-record-heading {
     display: flex;
