@@ -167,11 +167,43 @@ function editRecord(id) {
 }
 
 function deleteRecord(id) {
+  const record = records.find(item => item.id === id);
+  if (!record) return;
   if (!window.confirm("この記録を削除しますか？")) return;
 
-  records = records.filter(item => item.id !== id);
-  saveJson(STORAGE_KEY, records);
+  const nextRecords = records.filter(item => item.id !== id);
+
+  const nextPlans = record.planId
+    ? plans.map(plan => plan.id === record.planId
+      ? {
+          ...plan,
+          deletedDates: [...new Set([
+            ...(Array.isArray(plan.deletedDates)
+              ? plan.deletedDates
+              : []),
+            record.date
+          ])]
+        }
+      : plan)
+    : plans;
+
+  // 完了した予定の記録を消しても、その日を未完了に戻さない。
+  if (
+    record.planId &&
+    !saveJson(PLAN_STORAGE_KEY, nextPlans)
+  ) return;
+
+  if (!saveJson(STORAGE_KEY, nextRecords)) {
+    if (record.planId) {
+      saveJson(PLAN_STORAGE_KEY, plans);
+    }
+    return;
+  }
+
+  records = nextRecords;
+  plans = nextPlans;
   renderTimeline();
+  renderPlanList();
   drawGraph();
 }
 
@@ -382,6 +414,10 @@ function pendingPlans(selectedDate) {
     plans
       .filter(plan =>
         planOccurs(plan, date) &&
+        !(
+          Array.isArray(plan.deletedDates) &&
+          plan.deletedDates.includes(date)
+        ) &&
         !records.some(record =>
           record.planId === plan.id &&
           record.date === date
@@ -411,7 +447,16 @@ function resetPlanForm() {
 function renderPlanList() {
   const list = document.getElementById("planList");
 
-  const visiblePlans = plans.filter(plan => {
+
+    const visiblePlans = plans.filter(plan => {
+    const deletedForDisplay =
+      Array.isArray(plan.deletedDates) &&
+      plan.deletedDates.includes(
+        plan.repeat === "once"
+          ? plan.date
+          : getToday()
+      );
+
     const completed = records.some(record =>
       record.planId === plan.id &&
       (
@@ -419,7 +464,8 @@ function renderPlanList() {
         record.date === getToday()
       )
     );
-    return !completed;
+
+    return !completed && !deletedForDisplay;
   });
 
   const repeatLabels = {
@@ -514,12 +560,21 @@ document
       return;
     }
 
-    const plan = {
+
+        const plan = {
       id: editingPlanId || createRecordId(),
       activity,
       date: planDate.value,
       time: normalizedTime,
-      repeat: planRepeat.value
+      repeat: planRepeat.value,
+      ...(editingPlanId
+        ? {
+            deletedDates:
+              plans.find(item =>
+                item.id === editingPlanId
+              )?.deletedDates || []
+          }
+        : {})
     };
 
     plans = editingPlanId
