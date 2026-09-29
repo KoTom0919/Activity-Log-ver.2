@@ -1278,12 +1278,11 @@ function buildDailyPrintPage(date) {
     record => record.date === date
   );
 
-
   const middle = items.length <= 20
-  ? items.length
-  : items.length <= 40
-    ? 20
-    : Math.ceil(items.length / 2);
+    ? items.length
+    : items.length <= 40
+      ? 20
+      : Math.ceil(items.length / 2);
 
   const perColumn = Math.max(
     middle,
@@ -1694,7 +1693,48 @@ function escapeHtml(value) {
   );
 }
 
+/* データ移行ダイアログ */
+
+const transferDialog = document.getElementById("transferDialog");
+const openTransferDialogButton =
+  document.getElementById("openTransferDialogButton");
+const closeTransferDialogButton =
+  document.getElementById("closeTransferDialogButton");
+
+openTransferDialogButton.addEventListener("click", () => {
+  transferDialog.classList.remove("hidden");
+  transferDialog.setAttribute("aria-hidden", "false");
+  closeTransferDialogButton.focus();
+});
+
+function closeTransferDialog() {
+  transferDialog.classList.add("hidden");
+  transferDialog.setAttribute("aria-hidden", "true");
+  openTransferDialogButton.focus();
+}
+
+closeTransferDialogButton.addEventListener(
+  "click",
+  closeTransferDialog
+);
+
+transferDialog.addEventListener("click", event => {
+  if (event.target === transferDialog) {
+    closeTransferDialog();
+  }
+});
+
+document.addEventListener("keydown", event => {
+  if (
+    event.key === "Escape" &&
+    !transferDialog.classList.contains("hidden")
+  ) {
+    closeTransferDialog();
+  }
+});
+
 /* 別の端末へのデータ移行 */
+
 const transferKeys = [
   STORAGE_KEY,
   ROUTINE_STORAGE_KEY,
