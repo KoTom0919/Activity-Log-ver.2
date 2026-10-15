@@ -1,3 +1,4 @@
+
 "use strict";
 
 const STORAGE_KEY = "activityRecords_v1";
@@ -30,9 +31,180 @@ const dailyMemoMessage = document.getElementById("dailyMemoMessage");
 const saveDailyMemoButton = document.getElementById("saveDailyMemoButton");
 const searchMoodInput = document.getElementById("searchMood");
 
-const moodButtons = [
-  ...document.querySelectorAll("#moodButtons button")
-];
+const MOOD_SETTINGS_KEY = "moodSettings_v2";
+
+const LEGACY_MOOD_SETTINGS = {
+  min: -3,
+  max: 3,
+  step: 1,
+  method: "buttons"
+};
+
+let moodSettings = normalizeMoodSettings(
+  loadJson(MOOD_SETTINGS_KEY, LEGACY_MOOD_SETTINGS)
+);
+
+let editingMoodSettings = null;
+
+function normalizeMoodSettings(s) {
+  const x = s || {};
+  return {
+    min: Number.isFinite(Number(x.min)) ? Number(x.min) : -3,
+    max: Number.isFinite(Number(x.max)) ? Number(x.max) : 3,
+    step: Number(x.step) > 0 ? Number(x.step) : 1,
+    method: ["buttons", "keyboard", "select", "slider"]
+      .includes(x.method) ? x.method : "buttons"
+  };
+}
+
+function settingsForRecord(record) {
+  return record.moodSettings
+    ? normalizeMoodSettings(record.moodSettings)
+    : LEGACY_MOOD_SETTINGS;
+}
+
+function normalizedMood(record) {
+  const s = settingsForRecord(record);
+  return s.max === s.min
+    ? 50
+    : (Number(record.mood) - s.min) * 100 / (s.max - s.min);
+}
+
+function validMood(value, s) {
+  if (
+    value === null ||
+    value === "" ||
+    !Number.isFinite(Number(value))
+  ) return false;
+
+  const n = Number(value);
+
+  if (n < s.min - 1e-8 || n > s.max + 1e-8) {
+    return false;
+  }
+
+  return Math.abs(
+    (n - s.min) / s.step -
+    Math.round((n - s.min) / s.step)
+  ) < 1e-6;
+}
+
+function moodValues(s) {
+  const count =
+    Math.floor((s.max - s.min) / s.step + 1e-8) + 1;
+
+  return Array.from(
+    { length: Math.min(count, 1000) },
+    (_, i) => Number((s.min + i * s.step).toPrecision(12))
+  );
+}
+
+function renderMoodInput() {
+  const root = document.getElementById("moodButtons");
+  root.replaceChildren();
+
+  const s = editingMoodSettings || moodSettings;
+  const values = moodValues(s);
+
+  root.className = "mood-buttons";
+
+  if (s.method === "buttons" && values.length <= 30) {
+    root.style.gridTemplateColumns =
+      `repeat(${Math.min(7, values.length)}, minmax(0, 1fr))`;
+
+    values.forEach(v => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.dataset.mood = String(v);
+      b.textContent = formatMood(v);
+      b.onclick = () => selectMood(v);
+      root.append(b);
+    });
+
+  } else if (s.method === "slider") {
+    root.classList.add("mood-single-input");
+
+    const range = document.createElement("input");
+    range.type = "range";
+    range.min = s.min;
+    range.max = s.min + (values.length - 1) * s.step;
+    range.step = s.step;
+
+    range.value = validMood(selectedMood, s)
+      ? selectedMood
+      : s.min;
+
+    const label = document.createElement("output");
+    label.textContent = formatMood(Number(range.value));
+
+    range.oninput = () => {
+      selectedMood = Number(range.value);
+      label.textContent = formatMood(selectedMood);
+    };
+
+    root.append(range, label);
+
+  } else if (
+    s.method === "select" ||
+    (s.method === "buttons" && values.length > 30)
+  ) {
+    root.classList.add("mood-single-input");
+
+    const select = document.createElement("select");
+    select.append(new Option("選択してください", ""));
+
+    values.forEach(v => {
+      select.append(new Option(formatMood(v), String(v)));
+    });
+
+    select.value = validMood(selectedMood, s)
+      ? String(selectedMood)
+      : "";
+
+    select.onchange = () => {
+      selectMood(
+        select.value === "" ? null : Number(select.value)
+      );
+    };
+
+    root.append(select);
+
+  } else {
+    root.classList.add("mood-single-input");
+
+    const input = document.createElement("input");
+    input.type = "number";
+    input.step = "any";
+    input.min = s.min;
+    input.max = s.max;
+    input.placeholder = `${s.min}〜${s.max}`;
+
+    input.value = selectedMood === null
+      ? ""
+      : selectedMood;
+
+    input.oninput = () => {
+      selectedMood = input.value === ""
+        ? null
+        : Number(input.value);
+    };
+
+    root.append(input);
+  }
+
+  document.getElementById("moodGuide").textContent =
+    `${s.min}〜${s.max}（間隔 ${s.step}）`;
+
+  document.querySelectorAll("#moodButtons button")
+    .forEach(b => {
+      const active =
+        selectedMood !== null &&
+        Number(b.dataset.mood) === selectedMood;
+
+      b.classList.toggle("selected", active);
+      b.setAttribute("aria-pressed", String(active));
+    });
+}
 
 const routineModal = document.getElementById("routineModal");
 const routineList = document.getElementById("routineList");
@@ -49,8 +221,7 @@ const planRepeat = document.getElementById("planRepeat");
    記録入力
 ========================= */
 
-document
-  .getElementById("nowButton")
+document.getElementById("nowButton")
   .addEventListener("click", setCurrentDateTime);
 
 saveButton.addEventListener("click", saveRecord);
@@ -69,24 +240,72 @@ timeInput.addEventListener("blur", () => {
   if (normalized) timeInput.value = normalized;
 });
 
-moodButtons.forEach(button => {
-  button.addEventListener("click", () => {
-    selectMood(Number(button.dataset.mood));
-  });
-});
-
 function selectMood(mood) {
   selectedMood = mood;
-
-  moodButtons.forEach(button => {
-    const selected =
-      mood !== null &&
-      Number(button.dataset.mood) === mood;
-
-    button.classList.toggle("selected", selected);
-    button.setAttribute("aria-pressed", String(selected));
-  });
+  renderMoodInput();
 }
+
+document.getElementById("openMoodSettings").onclick = () => {
+  ["min", "max", "step", "method"].forEach(k => {
+    const id = "mood" + k[0].toUpperCase() + k.slice(1);
+    document.getElementById(id).value = moodSettings[k];
+  });
+
+  document.getElementById("moodSettingsError")
+    .textContent = "";
+
+  document.getElementById("moodSettingsPanel")
+    .classList.remove("hidden");
+};
+
+document.getElementById("cancelMoodSettings").onclick = () => {
+  document.getElementById("moodSettingsPanel")
+    .classList.add("hidden");
+};
+
+document.getElementById("saveMoodSettings").onclick = () => {
+  const s = {
+    min: Number(document.getElementById("moodMin").value),
+    max: Number(document.getElementById("moodMax").value),
+    step: Number(document.getElementById("moodStep").value),
+    method: document.getElementById("moodMethod").value
+  };
+
+  const error = document.getElementById("moodSettingsError");
+
+  const fieldsFilled = ["moodMin", "moodMax", "moodStep"]
+    .every(id => document.getElementById(id).value.trim() !== "");
+
+  const steps = (s.max - s.min) / s.step;
+
+  if (
+    !fieldsFilled ||
+    ![s.min, s.max, s.step].every(Number.isFinite) ||
+    s.max <= s.min ||
+    s.step <= 0 ||
+    steps > 999 ||
+    Math.abs(steps - Math.round(steps)) > 1e-6
+  ) {
+    error.textContent =
+      "最大値・最小値・間隔を確認してください。" +
+      "（最大1000段階、最大値は間隔で到達する値）";
+    return;
+  }
+
+  if (!saveJson(MOOD_SETTINGS_KEY, s)) {
+    error.textContent = "設定を保存できませんでした。";
+    return;
+  }
+
+  moodSettings = s;
+  editingMoodSettings = null;
+  selectedMood = null;
+
+  renderMoodInput();
+
+  document.getElementById("moodSettingsPanel")
+    .classList.add("hidden");
+};
 
 function saveRecord() {
   const date = dateInput.value;
@@ -108,12 +327,16 @@ function saveRecord() {
     return;
   }
 
-  if (selectedMood === null) {
+  if (!validMood(
+    selectedMood,
+    editingMoodSettings || moodSettings
+  )) {
     showFormMessage("気分を選択してください。");
     return;
   }
 
   const wasEditing = editingId !== null;
+
   const existingRecord = wasEditing
     ? records.find(item => item.id === editingId)
     : null;
@@ -126,7 +349,10 @@ function saveRecord() {
     date,
     time,
     activity,
-    mood: selectedMood
+    mood: selectedMood,
+    moodSettings: {
+      ...(editingMoodSettings || moodSettings)
+    }
   };
 
   if (wasEditing) {
@@ -137,10 +363,35 @@ function saveRecord() {
     records.push(record);
   }
 
-  saveJson(STORAGE_KEY, records);
+  
+  // 保存前のデータを保持する
+  const previousRecords = wasEditing
+    ? records.map(item =>
+        item.id === record.id
+          ? existingRecord
+          : item
+      )
+    : records.filter(item => item !== record);
+
+  // 保存を実行
+  const saved = saveJson(STORAGE_KEY, records);
+
+  // 保存に失敗した場合
+  if (!saved) {
+    records = previousRecords;
+
+    showFormMessage(
+      "記録を保存できませんでした。入力内容は残っています。"
+    );
+
+    return;
+  }
+
+  // 保存に成功した場合のみ画面を更新
   renderTimeline();
   drawGraph();
   resetForm();
+
 
   showFormMessage(
     wasEditing ? "記録を更新しました。" : "記録しました。",
@@ -156,6 +407,11 @@ function editRecord(id) {
   dateInput.value = record.date;
   timeInput.value = record.time;
   activityInput.value = record.activity;
+
+  editingMoodSettings = {
+    ...settingsForRecord(record)
+  };
+
   selectMood(Number(record.mood));
 
   saveButton.textContent = "更新する";
@@ -169,7 +425,10 @@ function editRecord(id) {
 function deleteRecord(id) {
   const record = records.find(item => item.id === id);
   if (!record) return;
-  if (!window.confirm("この記録を削除しますか？")) return;
+
+  if (!window.confirm("この記録を削除しますか？")) {
+    return;
+  }
 
   const nextRecords = records.filter(item => item.id !== id);
 
@@ -187,7 +446,6 @@ function deleteRecord(id) {
       : plan)
     : plans;
 
-  // 完了した予定の記録を消しても、その日を未完了に戻さない。
   if (
     record.planId &&
     !saveJson(PLAN_STORAGE_KEY, nextPlans)
@@ -202,13 +460,13 @@ function deleteRecord(id) {
 
   records = nextRecords;
   plans = nextPlans;
+
   renderTimeline();
   renderPlanList();
   drawGraph();
 }
 
-document
-  .getElementById("clearAllButton")
+document.getElementById("clearAllButton")
   .addEventListener("click", clearAllRecords);
 
 function clearAllRecords() {
@@ -226,6 +484,7 @@ function clearAllRecords() {
 
 function resetForm() {
   editingId = null;
+  editingMoodSettings = null;
   activityInput.value = "";
   selectMood(null);
   setCurrentDateTime();
@@ -249,8 +508,7 @@ timelineDateInput.addEventListener("change", () => {
   loadDailyMemo(timelineDateInput.value);
 });
 
-document
-  .getElementById("timelineResetButton")
+document.getElementById("timelineResetButton")
   .addEventListener("click", () => {
     timelineDateInput.value = "";
     document.getElementById("timelineFilterMessage").textContent = "";
@@ -274,8 +532,7 @@ function renderTimeline() {
   document.getElementById("recordCount").textContent =
     `${items.length + pending.length}件`;
 
-  document
-    .getElementById("clearAllButton")
+  document.getElementById("clearAllButton")
     .classList.toggle("hidden", records.length === 0);
 
   if (items.length === 0 && pending.length === 0) {
@@ -300,7 +557,10 @@ function renderTimeline() {
 
         <span
           class="mood-badge"
-          style="background:${moodColor(Number(record.mood))}"
+          style="background:${moodColor(
+            Number(record.mood),
+            settingsForRecord(record)
+          )}"
         >
           気分 ${formatMood(Number(record.mood))}
         </span>
@@ -355,8 +615,7 @@ function renderTimeline() {
 
   timeline.innerHTML = completedHtml + pendingHtml;
 
-  timeline
-    .querySelectorAll("[data-plan-complete]")
+  timeline.querySelectorAll("[data-plan-complete]")
     .forEach(button => {
       button.addEventListener("click", () => {
         completePlan(
@@ -389,6 +648,7 @@ function planOccurs(plan, date) {
 
   const start = new Date(`${plan.date}T12:00:00`);
   const target = new Date(`${date}T12:00:00`);
+
   return start.getDay() === target.getDay();
 }
 
@@ -440,6 +700,7 @@ function resetPlanForm() {
 
   document.getElementById("savePlanButton").textContent =
     "予定を登録";
+
   document.getElementById("cancelPlanButton")
     .classList.add("hidden");
 }
@@ -447,8 +708,7 @@ function resetPlanForm() {
 function renderPlanList() {
   const list = document.getElementById("planList");
 
-
-    const visiblePlans = plans.filter(plan => {
+  const visiblePlans = plans.filter(plan => {
     const deletedForDisplay =
       Array.isArray(plan.deletedDates) &&
       plan.deletedDates.includes(
@@ -502,13 +762,13 @@ function renderPlanList() {
       `).join("")
     : '<p class="empty-message">予定はありません。</p>';
 
-  list
-    .querySelectorAll("[data-edit-plan]")
+  list.querySelectorAll("[data-edit-plan]")
     .forEach(button => {
       button.addEventListener("click", () => {
         const plan = plans.find(
           item => item.id === button.dataset.editPlan
         );
+
         if (!plan) return;
 
         editingPlanId = plan.id;
@@ -517,8 +777,9 @@ function renderPlanList() {
         planTime.value = plan.time;
         planRepeat.value = plan.repeat;
 
-        document.getElementById("savePlanButton").textContent =
-          "予定を更新";
+        document.getElementById("savePlanButton")
+          .textContent = "予定を更新";
+
         document.getElementById("cancelPlanButton")
           .classList.remove("hidden");
 
@@ -526,8 +787,7 @@ function renderPlanList() {
       });
     });
 
-  list
-    .querySelectorAll("[data-delete-plan]")
+  list.querySelectorAll("[data-delete-plan]")
     .forEach(button => {
       button.addEventListener("click", () => {
         if (!window.confirm(
@@ -537,6 +797,7 @@ function renderPlanList() {
         plans = plans.filter(
           item => item.id !== button.dataset.deletePlan
         );
+
         saveJson(PLAN_STORAGE_KEY, plans);
         resetPlanForm();
         renderPlanList();
@@ -545,12 +806,12 @@ function renderPlanList() {
     });
 }
 
-document
-  .getElementById("savePlanButton")
+document.getElementById("savePlanButton")
   .addEventListener("click", () => {
     const activity = planActivity.value.trim();
     const normalizedTime =
       normalizeTypedTime(planTime.value);
+
     const message =
       document.getElementById("planMessage");
 
@@ -560,8 +821,7 @@ document
       return;
     }
 
-
-        const plan = {
+    const plan = {
       id: editingPlanId || createRecordId(),
       activity,
       date: planDate.value,
@@ -591,12 +851,145 @@ document
     resetPlanForm();
     renderPlanList();
     renderTimeline();
+
     message.textContent = "予定を保存しました。";
   });
 
-document
-  .getElementById("cancelPlanButton")
+document.getElementById("cancelPlanButton")
   .addEventListener("click", resetPlanForm);
+
+
+/* =========================================
+   予定完了時の気分入力
+========================================= */
+
+let selectedCompleteMood = null;
+
+function renderCompleteMoodInput() {
+  const container =
+    document.getElementById("completeMoodContainer");
+
+  const guide =
+    document.getElementById("completeMoodGuide");
+
+  const s = moodSettings;
+  const values = moodValues(s);
+
+  container.replaceChildren();
+  container.className = "mood-buttons";
+
+  guide.textContent =
+    `${s.min}〜${s.max}（間隔 ${s.step}）`;
+
+  function setCompleteMood(value) {
+    selectedCompleteMood = value;
+  }
+
+  if (s.method === "buttons" && values.length <= 30) {
+    container.style.gridTemplateColumns =
+      `repeat(${Math.min(7, values.length)}, minmax(0, 1fr))`;
+
+    values.forEach(value => {
+      const button = document.createElement("button");
+
+      button.type = "button";
+      button.textContent = formatMood(value);
+      button.dataset.mood = String(value);
+
+      button.addEventListener("click", () => {
+        setCompleteMood(value);
+
+        container.querySelectorAll("button")
+          .forEach(item => {
+            const active =
+              Number(item.dataset.mood) === value;
+
+            item.classList.toggle("selected", active);
+            item.setAttribute(
+              "aria-pressed",
+              String(active)
+            );
+          });
+      });
+
+      container.append(button);
+    });
+
+  } else if (s.method === "slider") {
+    container.classList.add("mood-single-input");
+
+    const slider = document.createElement("input");
+    slider.type = "range";
+    slider.min = String(s.min);
+    slider.max = String(s.max);
+    slider.step = String(s.step);
+    slider.value = String(s.min);
+
+    const output = document.createElement("output");
+    output.textContent = formatMood(s.min);
+
+    // 初期位置だけでは気分を確定しない
+    selectedCompleteMood = null;
+
+    slider.addEventListener("input", () => {
+      const value = Number(slider.value);
+
+      setCompleteMood(value);
+      output.textContent = formatMood(value);
+    });
+
+    container.append(slider, output);
+
+  } else if (
+    s.method === "select" ||
+    (s.method === "buttons" && values.length > 30)
+  ) {
+    container.classList.add("mood-single-input");
+
+    const select = document.createElement("select");
+
+    select.append(
+      new Option("選択してください", "")
+    );
+
+    values.forEach(value => {
+      select.append(
+        new Option(formatMood(value), String(value))
+      );
+    });
+
+    select.addEventListener("change", () => {
+      setCompleteMood(
+        select.value === ""
+          ? null
+          : Number(select.value)
+      );
+    });
+
+    container.append(select);
+
+  } else {
+    container.classList.add("mood-single-input");
+
+    const input = document.createElement("input");
+
+    input.type = "number";
+    input.step = "any";
+    input.min = String(s.min);
+    input.max = String(s.max);
+    input.placeholder = `${s.min}〜${s.max}`;
+
+    input.addEventListener("input", () => {
+      setCompleteMood(
+        input.value === ""
+          ? null
+          : Number(input.value)
+      );
+    });
+
+    container.append(input);
+  }
+}
 
 function completePlan(id, date) {
   const plan = plans.find(item => item.id === id);
@@ -604,41 +997,49 @@ function completePlan(id, date) {
 
   completingPlan = { plan, date };
 
-  document.getElementById("completeDateLabel").textContent =
-    `${formatDate(date)} ${plan.time}`;
-  document.getElementById("completeActivity").textContent =
-    plan.activity;
+  document.getElementById("completeDateLabel")
+    .textContent = `${formatDate(date)} ${plan.time}`;
+
+  document.getElementById("completeActivity")
+    .textContent = plan.activity;
+
   setCompleteCurrentTime();
-  document.getElementById("completeMood").value = "";
-  document.getElementById("completeMessage").textContent = "";
+
+  selectedCompleteMood = null;
+  renderCompleteMoodInput();
+
+  document.getElementById("completeMessage")
+    .textContent = "";
 
   const panel = document.getElementById("completePanel");
   panel.classList.remove("hidden");
+
   panel.scrollIntoView({
     behavior: "smooth",
     block: "center"
   });
 }
 
-document
-  .getElementById("cancelCompleteButton")
+document.getElementById("cancelCompleteButton")
   .addEventListener("click", () => {
     completingPlan = null;
+
     document.getElementById("completePanel")
       .classList.add("hidden");
   });
 
-const completeTimeInput = document.getElementById("completeTime");
+const completeTimeInput =
+  document.getElementById("completeTime");
 
 function setCompleteCurrentTime() {
   const now = new Date();
+
   completeTimeInput.value =
     `${String(now.getHours()).padStart(2, "0")}:` +
     String(now.getMinutes()).padStart(2, "0");
 }
 
-document
-  .getElementById("completeNowButton")
+document.getElementById("completeNowButton")
   .addEventListener("click", setCompleteCurrentTime);
 
 completeTimeInput.addEventListener("input", () => {
@@ -648,22 +1049,24 @@ completeTimeInput.addEventListener("input", () => {
 });
 
 completeTimeInput.addEventListener("blur", () => {
-  const normalized = normalizeTypedTime(completeTimeInput.value);
+  const normalized =
+    normalizeTypedTime(completeTimeInput.value);
+
   if (normalized) completeTimeInput.value = normalized;
 });
 
-document
-  .getElementById("finishPlanButton")
+document.getElementById("finishPlanButton")
   .addEventListener("click", () => {
     if (!completingPlan) return;
 
     const completionTime =
       normalizeTypedTime(completeTimeInput.value);
-    const mood =
-      document.getElementById("completeMood").value;
 
-    if (!completionTime || mood === "") {
-      document.getElementById("completeMessage").textContent =
+    const mood = selectedCompleteMood;
+
+    if (!completionTime || !validMood(mood, moodSettings)) {
+      document.getElementById("completeMessage")
+        .textContent =
         "正しい完了時刻と気分を入力してください。";
       return;
     }
@@ -681,7 +1084,8 @@ document
       date,
       time: completionTime,
       activity: plan.activity,
-      mood: Number(mood)
+      mood: Number(mood),
+      moodSettings: { ...moodSettings }
     };
 
     records.push(record);
@@ -692,6 +1096,7 @@ document
     }
 
     completingPlan = null;
+
     document.getElementById("completePanel")
       .classList.add("hidden");
 
@@ -768,102 +1173,170 @@ function autoResizeTextarea(textarea) {
     `${Math.max(textarea.scrollHeight, 88)}px`;
 }
 
-/* =========================
+/* =========================================
    グラフ
-========================= */
+========================================= */
+
+const moodGraphMode =
+  document.getElementById("moodGraphMode");
+
+const graphCanvas =
+  document.getElementById("moodChart");
+
+const graphEmpty =
+  document.getElementById("graphEmpty");
+
+moodGraphMode.addEventListener("change", drawGraph);
 
 graphDateInput.addEventListener("change", () => {
-  document.getElementById("graphFilterMessage").textContent =
-    "";
+  document.getElementById("graphFilterMessage")
+    .textContent = "";
+
   drawGraph();
 });
 
-document
-  .getElementById("graphResetButton")
+document.getElementById("graphResetButton")
   .addEventListener("click", () => {
     graphDateInput.value = "";
-    document.getElementById("graphFilterMessage").textContent =
-      "";
+
+    document.getElementById("graphFilterMessage")
+      .textContent = "";
+
     drawGraph();
   });
 
 function getGraphRecords() {
   const selectedDate = graphDateInput.value;
 
-  return getSortedRecords().filter(record =>
-    !selectedDate || record.date === selectedDate
-  );
+  return getSortedRecords().filter(record => {
+    return !selectedDate || record.date === selectedDate;
+  });
 }
 
+
+/* =========================================
+   グラフの説明文を更新
+========================================= */
+
+function updateGraphNote() {
+  const note = document.getElementById("graphNote");
+  const mode = document.getElementById("moodGraphMode");
+
+  if (!note || !mode) return;
+
+  if (mode.value === "normalized") {
+    note.textContent =
+      "横軸：時刻　縦軸：気分（0〜100％換算）";
+  } else {
+    note.textContent =
+      `横軸：時刻　縦軸：気分（${formatMood(moodSettings.min)}〜${formatMood(moodSettings.max)}）`;
+  }
+}
+
+
 function drawGraph() {
-  const canvas = document.getElementById("moodChart");
-  const emptyMessage =
-    document.getElementById("graphEmpty");
-  const items = getGraphRecords();
+  if (typeof Chart === "undefined") {
+    graphEmpty.textContent =
+      "グラフライブラリを読み込めませんでした。";
+    graphEmpty.classList.remove("hidden");
+    return;
+  }
+
+  const items = getGraphRecords().filter(record =>
+    Number.isFinite(Number(record.mood))
+  );
+
+  const normalized =
+    moodGraphMode.value === "normalized";
 
   if (moodChart) {
     moodChart.destroy();
     moodChart = null;
   }
 
-  canvas.classList.toggle("hidden", items.length === 0);
-  emptyMessage.classList.toggle("hidden", items.length > 0);
-
   if (items.length === 0) {
-    emptyMessage.textContent =
-      "この日の記録はありません。";
+    graphCanvas.classList.add("hidden");
+    graphEmpty.classList.remove("hidden");
+    graphEmpty.textContent =
+      "表示できる記録がありません。";
     return;
   }
 
-  if (typeof Chart === "undefined") {
-    canvas.classList.add("hidden");
-    emptyMessage.classList.remove("hidden");
-    emptyMessage.textContent =
-      "グラフを読み込めませんでした。";
-    return;
-  }
+  graphCanvas.classList.remove("hidden");
+  graphEmpty.classList.add("hidden");
 
-  const selectedDay = graphDateInput.value;
-  const firstDay = selectedDay || items[0].date;
-  const lastDay = selectedDay || items[items.length - 1].date;
+  const values = items.map(record =>
+    normalized
+      ? normalizedMood(record)
+      : Number(record.mood)
+  );
 
-  const startMinute =
-    new Date(`${firstDay}T00:00:00`).getTime() / 60000;
+  // 元の数値表示では、記録ごとの設定範囲も考慮
+  const rawMinimum = Math.min(
+    ...values,
+    ...items.map(record =>
+      settingsForRecord(record).min
+    )
+  );
 
-  const endMinute =
-    new Date(`${lastDay}T00:00:00`).getTime() / 60000 +
-    1440;
+  const rawMaximum = Math.max(
+    ...values,
+    ...items.map(record =>
+      settingsForRecord(record).max
+    )
+  );
 
-  moodChart = new Chart(canvas, {
+  const yMinimum = normalized ? 0 : rawMinimum;
+  const yMaximum = normalized ? 100 : rawMaximum;
+
+  // 表示日の指定がある場合は時刻のみ表示
+  const singleDay = Boolean(graphDateInput.value);
+
+  const labels = items.map(record =>
+    singleDay
+      ? record.time
+      : `${record.date.slice(5)} ${record.time}`
+  );
+
+  const points = items.map((record, index) => ({
+    x: index,
+    y: values[index]
+  }));
+
+  const pointColors = items.map(record =>
+    moodColor(
+      Number(record.mood),
+      settingsForRecord(record)
+    )
+  );
+
+  const ctx = graphCanvas.getContext("2d");
+
+  moodChart = new Chart(ctx, {
     type: "line",
 
     data: {
-      datasets: [
-        {
-          label: "気分",
+      datasets: [{
+        label: normalized
+          ? "気分（0〜100％換算）"
+          : "気分（元の数値）",
 
-          data: items.map(record => ({
-            x: new Date(
-              `${record.date}T${getSortableTime(record.time)}:00`
-            ).getTime() / 60000,
-            y: Number(record.mood)
-          })),
+        data: points,
 
-          borderColor: "#58a98a",
-          backgroundColor: "rgba(88,169,138,0.18)",
+        borderColor: "#58a98a",
+        backgroundColor: "rgba(88,169,138,0.15)",
 
-          pointBackgroundColor: items.map(record =>
-            moodColor(Number(record.mood))
-          ),
+        pointBackgroundColor: pointColors,
+        pointBorderColor: pointColors,
 
-          pointBorderColor: "#ffffff",
-          pointBorderWidth: 2,
-          pointRadius: 5,
-          borderWidth: 3,
-          tension: 0.2,
-          fill: false
-        }
-      ]
+        borderWidth: 2,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+
+        tension: 0.15,
+        fill: false,
+        spanGaps: false
+      }]
     },
 
     options: {
@@ -871,237 +1344,295 @@ function drawGraph() {
       maintainAspectRatio: false,
 
       interaction: {
-        mode: "nearest",
         intersect: false,
-        axis: "xy"
+        mode: "nearest"
+      },
+
+      plugins: {
+        legend: {
+          display: false
+        },
+
+        tooltip: {
+          callbacks: {
+            title(context) {
+              const index = context[0].dataIndex;
+              const record = items[index];
+
+              return `${record.date} ${record.time}`;
+            },
+
+            label(context) {
+              const index = context.dataIndex;
+              const record = items[index];
+
+              const original =
+                formatMood(Number(record.mood));
+
+              if (!normalized) {
+                return `気分：${original}`;
+              }
+
+              const percent =
+                normalizedMood(record).toFixed(1);
+
+              return `気分：${percent}％（元の値：${original}）`;
+            },
+
+            afterLabel(context) {
+              const record = items[context.dataIndex];
+              const settings = settingsForRecord(record);
+
+              return [
+                `活動：${record.activity}`,
+                `記録時の範囲：${settings.min}〜${settings.max}`
+              ];
+            }
+          }
+        }
       },
 
       scales: {
-        y: {
-          min: -3,
-          max: 3,
-          ticks: {
-            stepSize: 1,
-            callback(value) {
-              return formatMood(Number(value));
-            }
-          }
-        },
-
         x: {
           type: "linear",
-          min: startMinute,
-          max: endMinute,
+
+          min: 0,
+          max: Math.max(items.length - 1, 1),
 
           ticks: {
-            maxTicksLimit: 7,
-            callback(value) {
-              const date =
-                new Date(Number(value) * 60000);
-              const time =
-                `${String(date.getHours()).padStart(2, "0")}:` +
-                String(date.getMinutes()).padStart(2, "0");
+            stepSize: 1,
+            maxTicksLimit: 9,
 
-              return selectedDay
-                ? time
-                : `${date.getMonth() + 1}/${date.getDate()} ${time}`;
+            callback(value) {
+              const index = Math.round(value);
+
+              if (
+                Math.abs(value - index) > 0.001 ||
+                !labels[index]
+              ) {
+                return "";
+              }
+
+              return labels[index];
             }
           },
 
           title: {
             display: true,
-            text: selectedDay
-              ? formatDate(selectedDay)
-              : "日時"
-          }
-        }
-      },
-
-      plugins: {
-        tooltip: {
-          displayColors: false,
-
-          callbacks: {
-            title(context) {
-              const record =
-                items[context[0].dataIndex];
-              return `${formatDate(record.date)} ${record.time}`;
-            },
-
-            label(context) {
-              const record = items[context.dataIndex];
-              return [
-                `活動内容：${record.activity}`,
-                `気分：${formatMood(context.parsed.y)}`
-              ];
-            }
+            text: singleDay
+              ? "時刻"
+              : "日付・時刻"
           }
         },
 
-        legend: {
-          display: true
+        y: {
+          min: yMinimum,
+          max: yMaximum,
+
+          ticks: {
+            callback(value) {
+              if (normalized) {
+                return `${value}%`;
+              }
+
+              return formatMood(Number(value));
+            }
+          },
+
+          title: {
+            display: true,
+            text: normalized
+              ? "気分（％）"
+              : "気分"
+          }
         }
       }
     }
   });
+  
+  const graphNote =
+    document.getElementById("graphNote");
+
+  if (graphNote) {
+    graphNote.textContent = normalized
+      ? "横軸：記録順（等間隔）　縦軸：気分（0〜100％換算）"
+      : `横軸：記録順（等間隔）　縦軸：気分（元の数値・現在の設定 ${formatMood(moodSettings.min)}〜${formatMood(moodSettings.max)}）`;
+  }
+
 }
 
-/* =========================
-   検索
-========================= */
+  updateGraphNote();
 
-document
-  .getElementById("searchButton")
+
+/* =========================================
+   検索
+========================================= */
+
+const searchStartDate =
+  document.getElementById("searchStartDate");
+
+const searchEndDate =
+  document.getElementById("searchEndDate");
+
+const searchKeyword =
+  document.getElementById("searchKeyword");
+
+const searchResults =
+  document.getElementById("searchResults");
+
+const searchMessage =
+  document.getElementById("searchMessage");
+
+const searchResultCount =
+  document.getElementById("searchResultCount");
+
+document.getElementById("searchButton")
   .addEventListener("click", runSearch);
 
-document
-  .getElementById("searchClearButton")
-  .addEventListener("click", clearSearch);
+document.getElementById("searchClearButton")
+  .addEventListener("click", () => {
+    searchStartDate.value = "";
+    searchEndDate.value = "";
+    searchKeyword.value = "";
+    searchMoodInput.value = "";
 
-document
-  .getElementById("searchKeyword")
-  .addEventListener("keydown", event => {
-    if (event.key === "Enter") runSearch();
+    searchMessage.textContent = "";
+
+    runSearch();
   });
 
 function runSearch() {
-  const startDate =
-    document.getElementById("searchStartDate").value;
-  const endDate =
-    document.getElementById("searchEndDate").value;
+  const start = searchStartDate.value;
+  const end = searchEndDate.value;
 
-  const keyword = document
-    .getElementById("searchKeyword")
-    .value.trim()
-    .toLocaleLowerCase("ja-JP");
+  const keyword =
+    searchKeyword.value.trim().toLowerCase();
 
-  const moodValue = searchMoodInput.value;
-  const searchMessage =
-    document.getElementById("searchMessage");
+  const moodValue =
+    searchMoodInput.value.trim();
 
-  if (!startDate || !endDate) {
+  if (start && end && start > end) {
     searchMessage.textContent =
-      "開始日と終了日を選択してください。";
+      "終了日は開始日以降にしてください。";
     return;
   }
 
-  if (startDate > endDate) {
+  if (
+    moodValue !== "" &&
+    !Number.isFinite(Number(moodValue))
+  ) {
     searchMessage.textContent =
-      "開始日は終了日以前にしてください。";
-    return;
-  }
-
-  if (!keyword && moodValue === "") {
-    searchMessage.textContent =
-      "検索ワードまたは気分を指定してください。";
+      "気分には数値を入力してください。";
     return;
   }
 
   searchMessage.textContent = "";
 
   const results = getSortedRecords().filter(record => {
-    const dateMatches =
-      record.date >= startDate &&
-      record.date <= endDate;
+    if (start && record.date < start) return false;
+    if (end && record.date > end) return false;
 
-    const keywordMatches =
-      !keyword ||
-      record.activity
-        .toLocaleLowerCase("ja-JP")
-        .includes(keyword);
+    if (
+      keyword &&
+      !String(record.activity || "")
+        .toLowerCase()
+        .includes(keyword)
+    ) {
+      return false;
+    }
 
-    const moodMatches =
-      moodValue === "" ||
-      Number(record.mood) === Number(moodValue);
+    if (moodValue !== "") {
+      if (
+        !Number.isFinite(Number(record.mood)) ||
+        Math.abs(
+          Number(record.mood) - Number(moodValue)
+        ) > 1e-8
+      ) {
+        return false;
+      }
+    }
 
-    return dateMatches &&
-      keywordMatches &&
-      moodMatches;
+    return true;
   });
 
-  renderSearchResults(results);
-}
+  searchResultCount.textContent =
+    `${results.length}件`;
 
-function renderSearchResults(items) {
-  const resultsArea =
-    document.getElementById("searchResults");
-
-  document.getElementById("searchResultCount").textContent =
-    `${items.length}件`;
-
-  if (items.length === 0) {
-    resultsArea.innerHTML = `
-      <p class="empty-message">
-        条件に一致する記録がありません。
-      </p>
-    `;
+  if (results.length === 0) {
+    searchResults.innerHTML =
+      '<p class="empty-message">該当する記録はありません。</p>';
     return;
   }
 
-  resultsArea.innerHTML = items.map(record => `
-    <article class="search-result-item">
-      <div class="record-head">
-        <time class="record-date">
-          ${formatDate(record.date)}
-          ${escapeHtml(record.time)}
-        </time>
+  searchResults.innerHTML = results.map(record => {
+    const settings = settingsForRecord(record);
 
-        <span
-          class="mood-badge"
-          style="background:${moodColor(Number(record.mood))}"
-        >
-          気分 ${formatMood(Number(record.mood))}
-        </span>
-      </div>
+    return `
+      <article class="timeline-item">
+        <div class="record-head">
+          <time class="record-date">
+            ${formatDate(record.date)}
+            ${escapeHtml(record.time)}
+          </time>
 
-      <p class="activity-text">
-        ${escapeHtml(record.activity)}
-      </p>
-    </article>
-  `).join("");
+          <span
+            class="mood-badge"
+            style="background:${moodColor(
+              Number(record.mood),
+              settings
+            )}"
+          >
+            気分 ${formatMood(Number(record.mood))}
+          </span>
+        </div>
+
+        <p class="activity-text">
+          ${escapeHtml(record.activity)}
+        </p>
+
+        <p class="mood-guide">
+          記録時の設定：
+          ${settings.min}〜${settings.max}
+          （間隔 ${settings.step}）
+        </p>
+
+        <div class="record-actions">
+          <button
+            type="button"
+            data-search-edit="${escapeHtml(record.id)}"
+          >
+            編集
+          </button>
+        </div>
+      </article>
+    `;
+  }).join("");
+
+  searchResults.querySelectorAll("[data-search-edit]")
+    .forEach(button => {
+      button.addEventListener("click", () => {
+        editRecord(button.dataset.searchEdit);
+      });
+    });
 }
 
-function clearSearch() {
-  document.getElementById("searchStartDate").value = "";
-  document.getElementById("searchEndDate").value = "";
-  document.getElementById("searchKeyword").value = "";
-  searchMoodInput.value = "";
-  document.getElementById("searchMessage").textContent = "";
-  clearSearchResults();
-}
-
-function clearSearchResults() {
-  document.getElementById("searchResultCount").textContent =
-    "0件";
-
-  document.getElementById("searchResults").innerHTML = `
-    <p class="empty-message">
-      期間と検索条件を入力してください。
-    </p>
-  `;
-}
-
-/* =========================
+/* =========================================
    定期的な活動
-========================= */
+========================================= */
 
-document
-  .getElementById("openRoutineButton")
+document.getElementById("openRoutineButton")
   .addEventListener("click", openRoutineModal);
 
-document
-  .getElementById("closeRoutineButton")
+document.getElementById("closeRoutineButton")
   .addEventListener("click", closeRoutineModal);
 
-document
-  .getElementById("toggleRoutineSettingsButton")
+document.getElementById("toggleRoutineSettingsButton")
   .addEventListener("click", () => {
     routineSettingsOpen = !routineSettingsOpen;
     renderRoutineActivities();
   });
 
-document
-  .getElementById("addRoutineButton")
+document.getElementById("addRoutineButton")
   .addEventListener("click", addRoutineActivity);
 
 newRoutineInput.addEventListener("keydown", event => {
@@ -1117,9 +1648,11 @@ routineModal.addEventListener("click", event => {
 routineList.addEventListener("click", event => {
   const button =
     event.target.closest("[data-routine-index]");
+
   if (!button) return;
 
   const index = Number(button.dataset.routineIndex);
+
   activityInput.value =
     routineActivities[index] || "";
 
@@ -1130,10 +1663,10 @@ routineList.addEventListener("click", event => {
 routineEditList.addEventListener("change", event => {
   const input =
     event.target.closest("[data-routine-edit-index]");
+
   if (!input) return;
 
-  const index =
-    Number(input.dataset.routineEditIndex);
+  const index = Number(input.dataset.routineEditIndex);
   const value = input.value.trim();
 
   if (!value) {
@@ -1142,20 +1675,30 @@ routineEditList.addEventListener("change", event => {
   }
 
   routineActivities[index] = value;
-  saveJson(ROUTINE_STORAGE_KEY, routineActivities);
+
+  saveJson(
+    ROUTINE_STORAGE_KEY,
+    routineActivities
+  );
+
   renderRoutineActivities();
 });
 
 routineEditList.addEventListener("click", event => {
   const button =
     event.target.closest("[data-routine-delete-index]");
+
   if (!button) return;
 
-  const index =
-    Number(button.dataset.routineDeleteIndex);
+  const index = Number(button.dataset.routineDeleteIndex);
 
   routineActivities.splice(index, 1);
-  saveJson(ROUTINE_STORAGE_KEY, routineActivities);
+
+  saveJson(
+    ROUTINE_STORAGE_KEY,
+    routineActivities
+  );
+
   renderRoutineActivities();
 });
 
@@ -1165,12 +1708,14 @@ function openRoutineModal() {
 
   routineModal.classList.remove("hidden");
   routineModal.setAttribute("aria-hidden", "false");
+
   document.body.classList.add("modal-open");
 }
 
 function closeRoutineModal() {
   routineModal.classList.add("hidden");
   routineModal.setAttribute("aria-hidden", "true");
+
   document.body.classList.remove("modal-open");
 }
 
@@ -1184,7 +1729,12 @@ function addRoutineActivity() {
 
   routineActivities.push(value);
   newRoutineInput.value = "";
-  saveJson(ROUTINE_STORAGE_KEY, routineActivities);
+
+  saveJson(
+    ROUTINE_STORAGE_KEY,
+    routineActivities
+  );
+
   renderRoutineActivities();
   newRoutineInput.focus();
 }
@@ -1241,28 +1791,36 @@ function renderRoutineActivities() {
     .join("");
 }
 
-/* =========================
-   日ごとの印刷
-========================= */
+/* =========================================
+   印刷する期間の選択
+========================================= */
 
-const printDialog = document.getElementById("printDialog");
-const printStartDate = document.getElementById("printStartDate");
-const printEndDate = document.getElementById("printEndDate");
+const printDialog =
+  document.getElementById("printDialog");
+
+const printStartDate =
+  document.getElementById("printStartDate");
+
+const printEndDate =
+  document.getElementById("printEndDate");
+
 const printDialogMessage =
   document.getElementById("printDialogMessage");
 
-document
-  .getElementById("openPrintDialogButton")
+document.getElementById("openPrintDialogButton")
   .addEventListener("click", () => {
     const today = getToday();
 
     printStartDate.value =
       timelineDateInput.value || today;
+
     printEndDate.value = printStartDate.value;
+
     printDialogMessage.textContent = "";
 
     printDialog.classList.remove("hidden");
     printDialog.setAttribute("aria-hidden", "false");
+
     printStartDate.focus();
   });
 
@@ -1271,8 +1829,7 @@ function closePrintDialog() {
   printDialog.setAttribute("aria-hidden", "true");
 }
 
-document
-  .getElementById("cancelPrintButton")
+document.getElementById("cancelPrintButton")
   .addEventListener("click", closePrintDialog);
 
 printDialog.addEventListener("click", event => {
@@ -1281,8 +1838,7 @@ printDialog.addEventListener("click", event => {
   }
 });
 
-document
-  .getElementById("executePrintButton")
+document.getElementById("executePrintButton")
   .addEventListener("click", () => {
     const start = printStartDate.value;
     const end = printEndDate.value;
@@ -1294,8 +1850,10 @@ document
     }
 
     const days = [];
+
     const current =
       new Date(`${start}T12:00:00`);
+
     const last =
       new Date(`${end}T12:00:00`);
 
@@ -1313,10 +1871,11 @@ document
       return;
     }
 
-    document.getElementById("dailyPrintRoot").innerHTML =
-      days.map(buildDailyPrintPage).join("");
+    document.getElementById("dailyPrintRoot")
+      .innerHTML = days.map(buildDailyPrintPage).join("");
 
     closePrintDialog();
+
     document.body.classList.add("print-daily");
 
     requestAnimationFrame(() => {
@@ -1328,79 +1887,131 @@ window.addEventListener("afterprint", () => {
   document.body.classList.remove("print-daily");
 });
 
+/* =========================================
+   1日ごとの印刷ページ
+========================================= */
+
+/* =========================================
+   1日ごとの印刷ページ
+   1ページ最大40件（左20件・右20件）
+========================================= */
+
 function buildDailyPrintPage(date) {
   const items = getSortedRecords().filter(
     record => record.date === date
   );
 
-  const middle = items.length <= 20
-    ? items.length
-    : items.length <= 40
-      ? 20
-      : Math.ceil(items.length / 2);
-
-  const perColumn = Math.max(
-    middle,
-    items.length - middle
-  );
-
-  const recordFont = Math.max(
-    5.5,
-    Math.min(8, 80 / Math.max(10, perColumn))
-  );
-
   const memo = dailyMemos[date] || "";
 
-  const column = part => part.length
-    ? part.map(record => `
-        <div class="daily-print-record">
-          <div class="daily-print-record-heading">
-            <strong>${escapeHtml(record.time)}</strong>
-            <span>
-              気分 ${formatMood(Number(record.mood))}
-            </span>
-          </div>
-          <p>${escapeHtml(record.activity)}</p>
+  // 40件ずつページに分割
+  const pages = [];
+
+  for (let i = 0; i < items.length; i += 40) {
+    pages.push(items.slice(i, i + 40));
+  }
+
+  // 記録がない日も1ページ作る
+  if (pages.length === 0) {
+    pages.push([]);
+  }
+
+  // 記録1件分のHTML
+  function renderColumn(part) {
+    if (part.length === 0) {
+      return '<p class="daily-print-empty">記録なし</p>';
+    }
+
+    return part.map(record => `
+      <div class="daily-print-record">
+        <div class="daily-print-record-heading">
+          <strong>
+            ${escapeHtml(record.time)}
+          </strong>
+
+          <span>
+            気分 ${formatMood(Number(record.mood))}
+          </span>
         </div>
-      `).join("")
-    : '<p class="daily-print-empty">記録なし</p>';
 
-  return `
-    <section
-      class="daily-print-page"
-      style="--daily-record-font:${recordFont}pt"
-    >
-      <h1>
-        ${escapeHtml(date.replace(/-/g, "/"))}
-        活動記録表
-      </h1>
-
-      <section class="daily-print-graph">
-        <h2>グラフ</h2>
-        ${buildDailyGraphSvg(items)}
-      </section>
-
-      <div class="daily-print-columns">
-        <section class="daily-print-column">
-          <div class="daily-print-list">
-            ${column(items.slice(0, middle))}
-          </div>
-        </section>
-
-        <section class="daily-print-column">
-          <div class="daily-print-list">
-            ${column(items.slice(middle))}
-          </div>
-        </section>
+        <p>${escapeHtml(record.activity)}</p>
       </div>
+    `).join("");
+  }
 
-      <section class="daily-print-memo">
-        <h2>メモ</h2>
-        <p>${memo ? escapeHtml(memo) : "メモなし"}</p>
+  return pages.map((pageItems, pageIndex) => {
+    // 各ページで左20件、右20件
+    const leftItems = pageItems.slice(0, 20);
+    const rightItems = pageItems.slice(20, 40);
+
+    const pageNumber = pageIndex + 1;
+    const totalPages = pages.length;
+
+    // 記録が多い場合は文字サイズを調整
+    const recordFont = Math.max(
+      5.5,
+      Math.min(
+        8,
+        80 / Math.max(
+          10,
+          leftItems.length,
+          rightItems.length
+        )
+      )
+    );
+
+    return `
+      <section
+        class="daily-print-page"
+        style="--daily-record-font:${recordFont}pt"
+      >
+        <h1>
+          ${escapeHtml(date.replace(/-/g, "/"))}
+          活動記録表
+
+          ${totalPages > 1
+            ? `（${pageNumber}/${totalPages}）`
+            : ""}
+        </h1>
+
+        <section class="daily-print-graph">
+          <h2>グラフ</h2>
+
+          ${buildDailyGraphSvg(items)}
+        </section>
+
+        <div class="daily-print-columns">
+          <section class="daily-print-column">
+            <div class="daily-print-list">
+              ${renderColumn(leftItems)}
+            </div>
+          </section>
+
+          <section class="daily-print-column">
+            <div class="daily-print-list">
+              ${renderColumn(rightItems)}
+            </div>
+          </section>
+        </div>
+
+        <section class="daily-print-memo">
+          <h2>メモ</h2>
+
+          <p>
+            ${pageIndex === 0
+              ? (memo ? escapeHtml(memo) : "メモなし")
+              : "（メモは1ページ目に記載）"}
+          </p>
+        </section>
       </section>
-    </section>
-  `;
+    `;
+  }).join("");
 }
+
+
+/* =========================================
+   印刷用グラフ
+   記録時の気分設定に対応
+========================================= */
 
 function buildDailyGraphSvg(items) {
   const left = 44;
@@ -1408,81 +2019,143 @@ function buildDailyGraphSvg(items) {
   const top = 16;
   const bottom = 177;
 
-  const y = mood =>
-    bottom -
-    (Number(mood) + 3) *
-      (bottom - top) / 6;
-
-  const x = time =>
-    left +
-    (
-      Number(time.slice(0, 2)) * 60 +
-      Number(time.slice(3, 5))
-    ) *
-      (right - left) / 1440;
-
-  const grid =
-    [-3, -2, -1, 0, 1, 2, 3]
-      .map(value => `
-        <line
-          x1="${left}"
-          y1="${y(value)}"
-          x2="${right}"
-          y2="${y(value)}"
-          stroke="#dde4ef"
+  // 記録がない場合
+  if (items.length === 0) {
+    return `
+      <svg viewBox="0 0 750 205">
+        <rect
+          width="750"
+          height="205"
+          fill="white"
         />
         <text
-          x="36"
-          y="${y(value) + 4}"
-          text-anchor="end"
+          x="375"
+          y="105"
+          text-anchor="middle"
+          fill="#777"
         >
-          ${value}
+          記録なし
         </text>
-      `)
-      .join("");
+      </svg>
+    `;
+  }
 
-  const ticks =
-    [0, 6, 12, 18, 24]
-      .map(hour => {
-        const position =
-          left +
-          hour * (right - left) / 24;
+  // グラフの表示方法
+  const normalized =
+    document.getElementById("moodGraphMode")
+      .value === "normalized";
 
-        return `
-          <line
-            x1="${position}"
-            y1="${top}"
-            x2="${position}"
-            y2="${bottom}"
-            stroke="#dde4ef"
-          />
-          <text
-            x="${position}"
-            y="195"
-            text-anchor="middle"
-          >
-            ${hour}:00
-          </text>
-        `;
-      })
-      .join("");
+  const values = items.map(item =>
+    normalized
+      ? normalizedMood(item)
+      : Number(item.mood)
+  );
 
-  const points = items
-    .map(item =>
-      `${x(getSortableTime(item.time))},${y(item.mood)}`
-    )
-    .join(" ");
+  const minMood = normalized
+    ? 0
+    : Math.min(
+        ...values,
+        ...items.map(item =>
+          settingsForRecord(item).min
+        )
+      );
 
-  const dots = items
-    .map(item => `
-      <circle
-        cx="${x(getSortableTime(item.time))}"
-        cy="${y(item.mood)}"
-        r="4"
-        fill="${moodColor(Number(item.mood))}"
-      />
-    `)
-    .join("");
+  const maxMood = normalized
+    ? 100
+    : Math.max(
+        ...values,
+        ...items.map(item =>
+          settingsForRecord(item).max
+        )
+      );
+
+  const moodSpan = Math.max(
+    1e-9,
+    maxMood - minMood
+  );
+
+  const y = mood =>
+    bottom -
+    (Number(mood) - minMood) *
+    (bottom - top) / moodSpan;
+
+  const x = time => {
+    const normalizedTime = getSortableTime(time);
+
+    const minutes =
+      Number(normalizedTime.slice(0, 2)) * 60 +
+      Number(normalizedTime.slice(3, 5));
+
+    return left +
+      minutes * (right - left) / 1440;
+  };
+
+  // 横線と縦軸の目盛り
+  const grid = Array.from(
+    { length: 7 },
+    (_, i) => minMood + moodSpan * i / 6
+  ).map(value => `
+    <line
+      x1="${left}"
+      y1="${y(value)}"
+      x2="${right}"
+      y2="${y(value)}"
+      stroke="#dde4ef"
+    />
+
+    <text
+      x="36"
+      y="${y(value) + 4}"
+      text-anchor="end"
+    >
+      ${normalized
+        ? Number(value.toFixed(1)) + "%"
+        : Number(value.toFixed(2))}
+    </text>
+  `).join("");
+
+  // 時刻の目盛り
+  const ticks = [0, 6, 12, 18, 24]
+    .map(hour => {
+      const position =
+        left + hour * (right - left) / 24;
+
+      return `
+        <line
+          x1="${position}"
+          y1="${top}"
+          x2="${position}"
+          y2="${bottom}"
+          stroke="#dde4ef"
+        />
+
+        <text
+          x="${position}"
+          y="195"
+          text-anchor="middle"
+        >
+          ${hour}:00
+        </text>
+      `;
+    }).join("");
+
+  // 折れ線
+  const points = items.map((item, index) =>
+    `${x(item.time)},${y(values[index])}`
+  ).join(" ");
+
+  // 各記録の点
+  const dots = items.map((item, index) => `
+    <circle
+      cx="${x(item.time)}"
+      cy="${y(values[index])}"
+      r="4"
+      fill="${moodColor(
+        Number(item.mood),
+        settingsForRecord(item)
+      )}"
+    />
+  `).join("");
 
   return `
     <svg
@@ -1517,12 +2190,11 @@ function buildDailyGraphSvg(items) {
   `;
 }
 
-/* =========================
+/* =========================================
    下部メニュー
-========================= */
+========================================= */
 
-document
-  .querySelectorAll(".nav-button")
+document.querySelectorAll(".nav-button")
   .forEach(button => {
     button.addEventListener("click", () => {
       showPage(button.dataset.page);
@@ -1534,21 +2206,21 @@ function showPage(pageId) {
     renderPlanList();
   }
 
-  document.querySelectorAll(".page").forEach(page => {
-    page.classList.toggle(
-      "active",
-      page.id === pageId
-    );
-  });
+  document.querySelectorAll(".page")
+    .forEach(page => {
+      page.classList.toggle(
+        "active",
+        page.id === pageId
+      );
+    });
 
-  document.querySelectorAll(".nav-button").forEach(
-    button => {
+  document.querySelectorAll(".nav-button")
+    .forEach(button => {
       button.classList.toggle(
         "active",
         button.dataset.page === pageId
       );
-    }
-  );
+    });
 
   window.scrollTo({
     top: 0,
@@ -1565,213 +2237,33 @@ function showPage(pageId) {
   }
 }
 
-/* =========================
-   共通処理
-========================= */
+/* =========================================
+   データの移行
+========================================= */
 
-function getSortedRecords() {
-  return [...records].sort((first, second) => {
-    const firstValue =
-      `${first.date}T${getSortableTime(first.time)}`;
-    const secondValue =
-      `${second.date}T${getSortableTime(second.time)}`;
-    return firstValue.localeCompare(secondValue);
-  });
-}
+const transferDialog =
+  document.getElementById("transferDialog");
 
-function setCurrentDateTime() {
-  const now = new Date();
+const transferMessage =
+  document.getElementById("transferMessage");
 
-  dateInput.value = formatInputDate(now);
-  timeInput.value =
-    `${String(now.getHours()).padStart(2, "0")}:` +
-    String(now.getMinutes()).padStart(2, "0");
-}
-
-function getToday() {
-  return formatInputDate(new Date());
-}
-
-function formatInputDate(date) {
-  const year = date.getFullYear();
-  const month =
-    String(date.getMonth() + 1).padStart(2, "0");
-  const day =
-    String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-}
-
-function normalizeTypedTime(value) {
-  const text = String(value)
-    .trim()
-    .replace(/\s/g, "");
-
-  if (!text) return null;
-
-  let hourText = "";
-  let minuteText = "";
-
-  if (text.includes(":")) {
-    const parts = text.split(":");
-    if (parts.length !== 2) return null;
-
-    hourText = parts[0];
-    minuteText = parts[1];
-  } else {
-    const numbers = text.replace(/\D/g, "");
-
-    if (
-      numbers.length === 1 ||
-      numbers.length === 2
-    ) {
-      hourText = numbers;
-      minuteText = "00";
-    } else if (
-      numbers.length === 3 ||
-      numbers.length === 4
-    ) {
-      hourText = numbers.slice(0, -2);
-      minuteText = numbers.slice(-2);
-    } else {
-      return null;
-    }
-  }
-
-  if (
-    !/^\d{1,2}$/.test(hourText) ||
-    !/^\d{1,2}$/.test(minuteText)
-  ) {
-    return null;
-  }
-
-  const hour = Number(hourText);
-  const minute = Number(minuteText);
-
-  if (
-    hour < 0 ||
-    hour > 23 ||
-    minute < 0 ||
-    minute > 59
-  ) {
-    return null;
-  }
-
-  return (
-    `${String(hour).padStart(2, "0")}:` +
-    String(minute).padStart(2, "0")
-  );
-}
-
-function getSortableTime(value) {
-  return normalizeTypedTime(value) || "00:00";
-}
-
-function formatDate(value) {
-  if (!value) return "";
-
-  const date = new Date(`${value}T00:00:00`);
-
-  return new Intl.DateTimeFormat("ja-JP", {
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-    weekday: "short"
-  }).format(date);
-}
-
-function formatMood(mood) {
-  if (mood > 0) return `＋${mood}`;
-  return String(mood).replace("-", "−");
-}
-
-function moodColor(mood) {
-  const colors = [
-    "#4267a9",
-    "#5d83ba",
-    "#7a9cab",
-    "#809087",
-    "#66a47d",
-    "#42a66e",
-    "#238d59"
-  ];
-
-  return colors[mood + 3] || "#809087";
-}
-
-function createRecordId() {
-  return (
-    Date.now().toString() +
-    "-" +
-    Math.random().toString(16).slice(2)
-  );
-}
-
-function loadJson(key, defaultValue) {
-  try {
-    const saved = localStorage.getItem(key);
-    return saved ? JSON.parse(saved) : defaultValue;
-  } catch (error) {
-    console.error(
-      `${key}の読み込みに失敗しました。`,
-      error
-    );
-    return defaultValue;
-  }
-}
-
-function saveJson(key, value) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-    return true;
-  } catch (error) {
-    console.error(
-      `${key}の保存に失敗しました。`,
-      error
-    );
-    return false;
-  }
-}
-
-function escapeHtml(value) {
-  const replacements = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    "'": "&#39;",
-    '"': "&quot;"
-  };
-
-  return String(value).replace(
-    /[&<>'"]/g,
-    character => replacements[character]
-  );
-}
-
-/* データ移行ダイアログ */
-
-const transferDialog = document.getElementById("transferDialog");
-const openTransferDialogButton =
-  document.getElementById("openTransferDialogButton");
-const closeTransferDialogButton =
-  document.getElementById("closeTransferDialogButton");
-
-openTransferDialogButton.addEventListener("click", () => {
-  transferDialog.classList.remove("hidden");
-  transferDialog.setAttribute("aria-hidden", "false");
-  closeTransferDialogButton.focus();
-});
+const importDataFile =
+  document.getElementById("importDataFile");
 
 function closeTransferDialog() {
   transferDialog.classList.add("hidden");
   transferDialog.setAttribute("aria-hidden", "true");
-  openTransferDialogButton.focus();
 }
 
-closeTransferDialogButton.addEventListener(
-  "click",
-  closeTransferDialog
-);
+document.getElementById("openTransferDialogButton")
+  .addEventListener("click", () => {
+    transferMessage.textContent = "";
+    transferDialog.classList.remove("hidden");
+    transferDialog.setAttribute("aria-hidden", "false");
+  });
+
+document.getElementById("closeTransferDialogButton")
+  .addEventListener("click", closeTransferDialog);
 
 transferDialog.addEventListener("click", event => {
   if (event.target === transferDialog) {
@@ -1779,42 +2271,16 @@ transferDialog.addEventListener("click", event => {
   }
 });
 
-document.addEventListener("keydown", event => {
-  if (
-    event.key === "Escape" &&
-    !transferDialog.classList.contains("hidden")
-  ) {
-    closeTransferDialog();
-  }
-});
-
-/* 別の端末へのデータ移行 */
-
-const transferKeys = [
-  STORAGE_KEY,
-  ROUTINE_STORAGE_KEY,
-  DAILY_MEMO_STORAGE_KEY,
-  PLAN_STORAGE_KEY
-];
-
-const importDataFile =
-  document.getElementById("importDataFile");
-const transferMessage =
-  document.getElementById("transferMessage");
-
-document
-  .getElementById("exportDataButton")
+document.getElementById("exportDataButton")
   .addEventListener("click", () => {
     const backup = {
-      app: "activity-log",
-      version: 1,
+      version: 2,
       exportedAt: new Date().toISOString(),
-      data: {
-        [STORAGE_KEY]: records,
-        [ROUTINE_STORAGE_KEY]: routineActivities,
-        [DAILY_MEMO_STORAGE_KEY]: dailyMemos,
-        [PLAN_STORAGE_KEY]: plans
-      }
+      records,
+      plans,
+      routineActivities,
+      dailyMemos,
+      moodSettings
     };
 
     const blob = new Blob(
@@ -1824,264 +2290,435 @@ document
 
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
+
     link.href = url;
     link.download =
-      `活動記録バックアップ_${getToday()}.json`;
+      `活動記録表バックアップ_${getToday()}.json`;
 
-    document.body.appendChild(link);
+    document.body.append(link);
     link.click();
     link.remove();
 
-    setTimeout(() => URL.revokeObjectURL(url), 60000);
-    transferMessage.textContent =
-      "バックアップファイルを書き出しました。";
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
 
-document
-  .getElementById("importDataButton")
+document.getElementById("importDataButton")
   .addEventListener("click", () => {
     importDataFile.click();
   });
 
 importDataFile.addEventListener("change", async () => {
-  const file = importDataFile.files?.[0];
+  const file = importDataFile.files[0];
   if (!file) return;
 
-  importDataFile.value = "";
-
   try {
-    const backup = JSON.parse(await file.text());
-    const data = backup?.data;
+    const text = await file.text();
+    const data = JSON.parse(text);
 
     if (
-      backup?.app !== "activity-log" ||
-      backup.version !== 1 ||
       !data ||
-      !Array.isArray(data[STORAGE_KEY]) ||
-      !Array.isArray(data[ROUTINE_STORAGE_KEY]) ||
-      !Array.isArray(data[PLAN_STORAGE_KEY]) ||
-      !data[DAILY_MEMO_STORAGE_KEY] ||
-      typeof data[DAILY_MEMO_STORAGE_KEY] !== "object" ||
-      Array.isArray(data[DAILY_MEMO_STORAGE_KEY]) ||
-      !data[STORAGE_KEY].every(record =>
-        record &&
-        typeof record.id === "string" &&
-        /^\d{4}-\d{2}-\d{2}$/.test(record.date) &&
-        normalizeTypedTime(record.time) &&
-        typeof record.activity === "string" &&
-        Number.isInteger(Number(record.mood)) &&
-        Number(record.mood) >= -3 &&
-        Number(record.mood) <= 3
-      ) ||
-      !data[ROUTINE_STORAGE_KEY].every(
-        value => typeof value === "string"
-      ) ||
-      !data[PLAN_STORAGE_KEY].every(plan =>
-        plan &&
-        typeof plan.id === "string" &&
-        typeof plan.activity === "string" &&
-        /^\d{4}-\d{2}-\d{2}$/.test(plan.date) &&
-        normalizeTypedTime(plan.time) &&
-        ["once", "daily", "weekly"].includes(plan.repeat)
-      ) ||
-      !Object.values(
-        data[DAILY_MEMO_STORAGE_KEY]
-      ).every(value => typeof value === "string")
+      !Array.isArray(data.records)
     ) {
-      throw new Error(
-        "活動記録のバックアップファイルを選んでください。"
-      );
+      throw new Error("バックアップ形式が正しくありません。");
     }
 
     if (!window.confirm(
-      "このスマホの活動記録・予定・定期的な活動・日別メモを、ファイルの内容で置き換えます。続けますか？"
+      "現在のデータをバックアップの内容で置き換えますか？"
     )) {
       return;
     }
 
-    const previous = Object.fromEntries(
-      transferKeys.map(key => [
-        key,
-        localStorage.getItem(key)
-      ])
-    );
+    const nextRecords = data.records;
+    const nextPlans = Array.isArray(data.plans)
+      ? data.plans : [];
+
+    const nextRoutines =
+      Array.isArray(data.routineActivities)
+        ? data.routineActivities : [];
+
+    const nextMemos =
+      data.dailyMemos &&
+      typeof data.dailyMemos === "object" &&
+      !Array.isArray(data.dailyMemos)
+        ? data.dailyMemos : {};
+
+    const nextMoodSettings =
+      normalizeMoodSettings(
+        data.moodSettings || LEGACY_MOOD_SETTINGS
+      );
+
+    // 書き込み前に容量を確認
+    const updates = [
+      [STORAGE_KEY, nextRecords],
+      [PLAN_STORAGE_KEY, nextPlans],
+      [ROUTINE_STORAGE_KEY, nextRoutines],
+      [DAILY_MEMO_STORAGE_KEY, nextMemos],
+      [MOOD_SETTINGS_KEY, nextMoodSettings]
+    ];
+
+    const previousValues = updates.map(([key]) => [
+      key,
+      localStorage.getItem(key)
+    ]);
 
     try {
-      transferKeys.forEach(key => {
+      updates.forEach(([key, value]) => {
         localStorage.setItem(
           key,
-          JSON.stringify(data[key])
+          JSON.stringify(value)
         );
       });
     } catch (error) {
-      transferKeys.forEach(key => {
-        if (previous[key] === null) {
-          localStorage.removeItem(key);
-        } else {
-          localStorage.setItem(key, previous[key]);
-        }
+      previousValues.forEach(([key, value]) => {
+        try {
+          if (value === null) {
+            localStorage.removeItem(key);
+          } else {
+            localStorage.setItem(key, value);
+          }
+        } catch (_) {}
       });
+
       throw error;
     }
 
-    window.location.reload();
+    records = nextRecords;
+    plans = nextPlans;
+    routineActivities = nextRoutines;
+    dailyMemos = nextMemos;
+    moodSettings = nextMoodSettings;
+
+    resetForm();
+    resetPlanForm();
+    renderRoutineActivities();
+    renderPlanList();
+    renderTimeline();
+    drawGraph();
+    runSearch();
+    loadDailyMemo(timelineDateInput.value);
+
+    transferMessage.textContent =
+      "データを読み込みました。";
+
   } catch (error) {
     transferMessage.textContent =
-      error instanceof SyntaxError
-        ? "JSONファイルを読み取れませんでした。"
-        : error.message || "読み込みに失敗しました。";
+      `読み込みに失敗しました：${error.message}`;
+  } finally {
+    importDataFile.value = "";
   }
 });
 
-window.editRecord = editRecord;
-window.deleteRecord = deleteRecord;
+/* =========================================
+   ローカルストレージ
+========================================= */
 
-initializeApp();
+function loadJson(key, fallback) {
+  try {
+    const text = localStorage.getItem(key);
+    if (text === null) return fallback;
 
-function initializeApp() {
-  setCurrentDateTime();
-
-  const today = getToday();
-  timelineDateInput.value = today;
-  graphDateInput.value = today;
-
-  renderTimeline();
-  loadDailyMemo(today);
-  renderRoutineActivities();
-  clearSearchResults();
-
-  requestAnimationFrame(drawGraph);
+    return JSON.parse(text);
+  } catch (error) {
+    console.error("データ読み込みエラー", error);
+    return fallback;
+  }
 }
 
+function saveJson(key, value) {
+  try {
+    localStorage.setItem(
+      key,
+      JSON.stringify(value)
+    );
+    return true;
+  } catch (error) {
+    console.error("データ保存エラー", error);
+    alert("データを保存できませんでした。");
+    return false;
+  }
+}
 
-async function loadNotices() {
-  const response = await fetch(
-    "./notices.json?t=" + Date.now(),
-    { cache: "no-store" }
-  );
+/* =========================================
+   日付・時刻
+========================================= */
 
-  if (!response.ok) {
-    throw new Error("お知らせの取得に失敗しました");
+function getToday() {
+  return formatInputDate(new Date());
+}
+
+function formatInputDate(date) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0")
+  ].join("-");
+}
+
+function formatDate(value) {
+  if (!value) return "";
+
+  const parts = value.split("-");
+  if (parts.length !== 3) return value;
+
+  return `${Number(parts[1])}/${Number(parts[2])}`;
+}
+
+function setCurrentDateTime() {
+  const now = new Date();
+
+  dateInput.value = formatInputDate(now);
+
+  timeInput.value =
+    `${String(now.getHours()).padStart(2, "0")}:` +
+    String(now.getMinutes()).padStart(2, "0");
+}
+
+function normalizeTypedTime(value) {
+  const text = String(value || "").trim();
+
+  if (!text) return null;
+
+  let hours;
+  let minutes;
+
+  if (text.includes(":")) {
+    const parts = text.split(":");
+
+    if (
+      parts.length !== 2 ||
+      !/^\d{1,2}$/.test(parts[0]) ||
+      !/^\d{1,2}$/.test(parts[1])
+    ) {
+      return null;
+    }
+
+    hours = Number(parts[0]);
+    minutes = Number(parts[1]);
+
+  } else {
+    if (!/^\d{1,4}$/.test(text)) {
+      return null;
+    }
+
+    const padded = text.padStart(4, "0");
+
+    hours = Number(padded.slice(0, 2));
+    minutes = Number(padded.slice(2));
   }
 
-  const data = await response.json();
-  return data.notices;
+  if (
+    hours < 0 ||
+    hours > 23 ||
+    minutes < 0 ||
+    minutes > 59
+  ) {
+    return null;
+  }
+
+  return (
+    String(hours).padStart(2, "0") +
+    ":" +
+    String(minutes).padStart(2, "0")
+  );
 }
 
+function getSortableTime(time) {
+  return normalizeTypedTime(time) || "00:00";
+}
 
-const NOTICE_STORAGE_KEY = "hiddenNotices_v1";
+function getSortedRecords() {
+  return [...records].sort((a, b) => {
+    const keyA =
+      `${a.date || ""} ${getSortableTime(a.time)}`;
 
-async function showAppNotices() {
+    const keyB =
+      `${b.date || ""} ${getSortableTime(b.time)}`;
+
+    return keyA.localeCompare(keyB);
+  });
+}
+
+/* =========================================
+   気分の表示
+========================================= */
+
+function formatMood(value) {
+  const n = Number(value);
+
+  if (!Number.isFinite(n)) return "—";
+
+  const formatted = Number(n.toPrecision(12));
+
+  return formatted > 0
+    ? `+${formatted}`
+    : String(formatted);
+}
+
+function moodColor(value, settings = moodSettings) {
+  const s = normalizeMoodSettings(settings);
+
+  const range = s.max - s.min;
+
+  if (range <= 0) {
+    return "#dce9e3";
+  }
+
+  const ratio = Math.max(
+    0,
+    Math.min(1, (value - s.min) / range)
+  );
+
+  // 低い気分：青
+  // 中間：薄い緑
+  // 高い気分：オレンジ
+  if (ratio < 0.35) {
+    return "#b8d6f4";
+  }
+
+  if (ratio < 0.65) {
+    return "#cce8d5";
+  }
+
+  return "#f7cfaa";
+}
+
+/* =========================================
+   共通処理
+========================================= */
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function createRecordId() {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
+    return crypto.randomUUID();
+  }
+
+  return (
+    Date.now().toString(36) +
+    Math.random().toString(36).slice(2)
+  );
+}
+
+/* =========================================
+   初期化
+========================================= */
+
+function initializeApp() {
+  loadNotices();
+  setCurrentDateTime();
+
+  renderMoodInput();
+  renderRoutineActivities();
+  renderPlanList();
+  renderTimeline();
+
+  loadDailyMemo(timelineDateInput.value);
+
+  // グラフの初期表示
+  if (typeof Chart !== "undefined") {
+    drawGraph();
+  }
+
+  // 検索画面の初期表示
+  searchResultCount.textContent = "0件";
+
+  // Escキーでダイアログを閉じる
+  document.addEventListener("keydown", event => {
+    if (event.key !== "Escape") return;
+
+    closeRoutineModal();
+    closePrintDialog();
+    closeTransferDialog();
+  });
+}
+
+/* =========================================
+   notices.json お知らせ表示
+========================================= */
+
+async function loadNotices() {
+  const panel = document.getElementById("noticesPanel");
+  const list = document.getElementById("noticesList");
+
+  if (!panel || !list) return;
+
   try {
-    const notices = await loadNotices();
-    if (!Array.isArray(notices)) return;
+    // キャッシュによる古いお知らせの表示を防ぐ
+    const response = await fetch(
+      "./notices.json?t=" + Date.now(),
+      { cache: "no-store" }
+    );
+
+    if (!response.ok) {
+      throw new Error("HTTP " + response.status);
+    }
+
+    const data = await response.json();
+
+    const notices = Array.isArray(data.notices)
+      ? data.notices
+      : [];
 
     const now = Date.now();
 
-    let hiddenIds = [];
-    try {
-      const saved = JSON.parse(
-        localStorage.getItem(NOTICE_STORAGE_KEY) || "[]"
-      );
-      if (Array.isArray(saved)) hiddenIds = saved;
-    } catch (error) {
-      console.warn("お知らせ設定を読み込めませんでした", error);
-    }
-
-    const visible = notices.filter(notice => {
-      if (!notice || typeof notice.id !== "string") return false;
+    const activeNotices = notices.filter(notice => {
+      if (!notice || !notice.message) return false;
 
       const start = notice.start
         ? Date.parse(notice.start)
         : -Infinity;
+
       const end = notice.end
         ? Date.parse(notice.end)
         : Infinity;
 
-      return (
-        !Number.isNaN(start) &&
-        !Number.isNaN(end) &&
-        now >= start &&
-        now < end &&
-        !hiddenIds.includes(notice.id)
-      );
+      if (Number.isNaN(start) || Number.isNaN(end)) {
+        return false;
+      }
+
+      return now >= start && now < end;
     });
 
-    if (visible.length === 0) return;
+    list.replaceChildren();
 
-    const overlay = document.createElement("div");
-    overlay.className = "notice-overlay";
-    overlay.setAttribute("role", "dialog");
-    overlay.setAttribute("aria-modal", "true");
-    overlay.setAttribute("aria-label", "お知らせ");
-
-    const panel = document.createElement("div");
-    panel.className = "notice-panel";
-
-    const heading = document.createElement("h2");
-    heading.textContent = "お知らせ";
-    panel.append(heading);
-
-    visible.forEach(notice => {
-      const item = document.createElement("section");
-      item.className = "notice-item";
+    activeNotices.forEach(notice => {
+      const article = document.createElement("article");
+      article.className = "notice-item";
 
       const title = document.createElement("h3");
       title.textContent = notice.title || "お知らせ";
 
       const message = document.createElement("p");
-      message.textContent = notice.message || "";
+      message.textContent = notice.message;
 
-      const actions = document.createElement("div");
-      actions.className = "notice-actions";
-
-      const closeButton = document.createElement("button");
-      closeButton.type = "button";
-      closeButton.textContent = "閉じる";
-
-      const hideButton = document.createElement("button");
-      hideButton.type = "button";
-      hideButton.textContent = "今後このメッセージを表示しない";
-
-      function removeItem() {
-        item.remove();
-        if (!panel.querySelector(".notice-item")) {
-          overlay.remove();
-        }
-      }
-
-      closeButton.addEventListener("click", removeItem);
-
-      hideButton.addEventListener("click", () => {
-        try {
-          const stored = JSON.parse(
-            localStorage.getItem(NOTICE_STORAGE_KEY) || "[]"
-          );
-          const ids = Array.isArray(stored) ? stored : [];
-
-          localStorage.setItem(
-            NOTICE_STORAGE_KEY,
-            JSON.stringify([...new Set([...ids, notice.id])])
-          );
-          removeItem();
-        } catch (error) {
-          console.error("非表示設定の保存に失敗しました", error);
-          alert("非表示設定を保存できませんでした。");
-        }
-      });
-
-      actions.append(closeButton, hideButton);
-      item.append(title, message, actions);
-      panel.append(item);
+      article.append(title, message);
+      list.append(article);
     });
 
-    overlay.append(panel);
-    document.body.append(overlay);
+    panel.classList.toggle(
+      "hidden",
+      activeNotices.length === 0
+    );
 
   } catch (error) {
-    console.error("お知らせの取得・表示に失敗しました", error);
+    console.warn(
+      "お知らせの取得に失敗しました。",
+      error
+    );
+
+    list.replaceChildren();
+    panel.classList.add("hidden");
   }
 }
 
-// アプリ起動時にお知らせを確認
-showAppNotices();
+initializeApp();

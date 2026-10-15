@@ -1865,3 +1865,326 @@ input[type="date"]::-webkit-date-and-time-value {
   background: #58a98a;
   border: 1px solid #58a98a;
 }
+
+
+/* =========================================
+   気分設定・入力方法
+========================================= */
+
+/* 気分のタイトルと設定ボタン */
+.mood-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.mood-title-row legend {
+  margin: 0;
+  padding: 0;
+  font-weight: 700;
+}
+
+.mood-title-row .secondary-button {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 7px 12px;
+  font-size: 0.85rem;
+}
+
+/* 気分設定パネル */
+.mood-settings-panel {
+  margin-top: 16px;
+  padding: 18px;
+  background: #f8fcfa;
+  border: 1px solid #b9d8cb;
+  border-radius: 14px;
+}
+
+.mood-settings-panel h3 {
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+  color: var(--main-dark);
+}
+
+/* 最小値・最大値・間隔 */
+.mood-setting-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.mood-setting-grid label {
+  min-width: 0;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.mood-setting-grid input {
+  width: 100%;
+  min-width: 0;
+  margin-top: 7px;
+  padding: 10px 8px;
+  font-size: 1rem;
+}
+
+/* 入力方法の選択 */
+#moodMethod {
+  display: block;
+  width: 100%;
+  min-height: 46px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  color: var(--text);
+  background: white;
+  border: 1.5px solid #b9c9c2;
+  border-radius: 9px;
+  font: inherit;
+}
+
+/* =========================================
+   ボタン形式
+========================================= */
+
+#moodButtons.mood-buttons {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(55px, 1fr)
+  );
+  gap: 8px;
+  width: 100%;
+}
+
+#moodButtons.mood-buttons button {
+  min-height: 46px;
+  padding: 8px 5px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-radius: 9px;
+  overflow-wrap: anywhere;
+}
+
+#moodButtons.mood-buttons button.selected {
+  color: white;
+  background: var(--main);
+  border-color: var(--main-dark);
+}
+
+/* =========================================
+   キーボード入力
+========================================= */
+
+#moodButtons .mood-number-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px;
+  font-size: 1.1rem;
+  text-align: center;
+  border: 1.5px solid #b9c9c2;
+  border-radius: 9px;
+}
+
+#moodButtons .mood-number-input:focus {
+  border-color: var(--main);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(88,169,138,0.15);
+}
+
+/* =========================================
+   プルダウン形式
+========================================= */
+
+#moodButtons .mood-select {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  font-size: 1rem;
+  color: var(--text);
+  background: white;
+  border: 1.5px solid #b9c9c2;
+  border-radius: 9px;
+}
+
+/* =========================================
+   スライダー形式
+========================================= */
+
+#moodButtons .mood-slider-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 0;
+}
+
+#moodButtons .mood-slider {
+  width: 100%;
+  height: 10px;
+  accent-color: var(--main);
+  cursor: pointer;
+}
+
+#moodButtons .mood-slider-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--main-dark);
+}
+
+#moodButtons .mood-slider-range {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* =========================================
+   気分の説明・エラー
+========================================= */
+
+#moodGuide {
+  margin: 10px 0 0;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+#moodSettingsError {
+  margin: 12px 0 0;
+  min-height: 1.2em;
+  color: var(--danger);
+  font-size: 0.85rem;
+}
+
+/* =========================================
+   グラフの表示方式切り替え
+========================================= */
+
+#moodGraphMode {
+  display: block;
+  width: 100%;
+  min-height: 46px;
+  margin: 8px 0 12px;
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--text);
+  background: white;
+  border: 1.5px solid #b9c9c2;
+  border-radius: 9px;
+}
+
+/* =========================================
+   検索画面の気分入力
+========================================= */
+
+#searchMood {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  font-size: 1rem;
+}
+
+/* =========================================
+   スマートフォン向け
+========================================= */
+
+@media (max-width: 480px) {
+  .mood-settings-panel {
+    padding: 14px;
+  }
+
+  .mood-setting-grid {
+    gap: 7px;
+  }
+
+  .mood-setting-grid input {
+    padding: 9px 6px;
+    font-size: 0.95rem;
+  }
+
+  #moodButtons.mood-buttons {
+    grid-template-columns: repeat(
+      auto-fit,
+      minmax(48px, 1fr)
+    );
+    gap: 6px;
+  }
+
+  #moodButtons.mood-buttons button {
+    min-height: 44px;
+    font-size: 0.9rem;
+  }
+}
+
+/* 印刷時は設定パネルを非表示 */
+@media print {
+  .mood-settings-panel,
+  .mood-title-row .secondary-button,
+  #moodGraphMode {
+    display: none !important;
+  }
+}
+
+/* 予定完了時の気分入力 */
+
+#completeMoodContainer {
+  margin-top: 10px;
+}
+
+#completeMoodContainer.mood-single-input {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#completeMoodContainer.mood-single-input input,
+#completeMoodContainer.mood-single-input select {
+  flex: 1;
+  min-width: 0;
+}
+
+#completeMoodContainer output {
+  min-width: 50px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* =========================================
+   お知らせ
+========================================= */
+
+.notices-panel {
+  margin: 0 0 18px;
+}
+
+.notice-item {
+  margin-bottom: 10px;
+  padding: 14px 16px;
+  background: #fff8e6;
+  border: 1px solid #e9d397;
+  border-left: 5px solid #d5a33d;
+  border-radius: 10px;
+}
+
+.notice-item h3 {
+  margin: 0 0 7px;
+  font-size: 1rem;
+  color: #805b16;
+}
+
+.notice-item p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+@media print {
+  .notices-panel {
+    display: none !important;
+  }
+}

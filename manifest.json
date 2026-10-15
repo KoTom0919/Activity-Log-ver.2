@@ -1,0 +1,25 @@
+
+{
+  "name": "活動記録アプリ",
+  "short_name": "活動記録",
+  "description": "日々の活動と気分を記録・管理するアプリ",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f8f6",
+  "theme_color": "#58a98a",
+  "icons": [
+    {
+      "src": "./icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
