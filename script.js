@@ -1967,3 +1967,121 @@ async function loadNotices() {
   const data = await response.json();
   return data.notices;
 }
+
+
+const NOTICE_STORAGE_KEY = "hiddenNotices_v1";
+
+async function showAppNotices() {
+  try {
+    const notices = await loadNotices();
+    if (!Array.isArray(notices)) return;
+
+    const now = Date.now();
+
+    let hiddenIds = [];
+    try {
+      const saved = JSON.parse(
+        localStorage.getItem(NOTICE_STORAGE_KEY) || "[]"
+      );
+      if (Array.isArray(saved)) hiddenIds = saved;
+    } catch (error) {
+      console.warn("お知らせ設定を読み込めませんでした", error);
+    }
+
+    const visible = notices.filter(notice => {
+      if (!notice || typeof notice.id !== "string") return false;
+
+      const start = notice.start
+        ? Date.parse(notice.start)
+        : -Infinity;
+      const end = notice.end
+        ? Date.parse(notice.end)
+        : Infinity;
+
+      return (
+        !Number.isNaN(start) &&
+        !Number.isNaN(end) &&
+        now >= start &&
+        now < end &&
+        !hiddenIds.includes(notice.id)
+      );
+    });
+
+    if (visible.length === 0) return;
+
+    const overlay = document.createElement("div");
+    overlay.className = "notice-overlay";
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
+    overlay.setAttribute("aria-label", "お知らせ");
+
+    const panel = document.createElement("div");
+    panel.className = "notice-panel";
+
+    const heading = document.createElement("h2");
+    heading.textContent = "お知らせ";
+    panel.append(heading);
+
+    visible.forEach(notice => {
+      const item = document.createElement("section");
+      item.className = "notice-item";
+
+      const title = document.createElement("h3");
+      title.textContent = notice.title || "お知らせ";
+
+      const message = document.createElement("p");
+      message.textContent = notice.message || "";
+
+      const actions = document.createElement("div");
+      actions.className = "notice-actions";
+
+      const closeButton = document.createElement("button");
+      closeButton.type = "button";
+      closeButton.textContent = "閉じる";
+
+      const hideButton = document.createElement("button");
+      hideButton.type = "button";
+      hideButton.textContent = "今後このメッセージを表示しない";
+
+      function removeItem() {
+        item.remove();
+        if (!panel.querySelector(".notice-item")) {
+          overlay.remove();
+        }
+      }
+
+      closeButton.addEventListener("click", removeItem);
+
+      hideButton.addEventListener("click", () => {
+        try {
+          const stored = JSON.parse(
+            localStorage.getItem(NOTICE_STORAGE_KEY) || "[]"
+          );
+          const ids = Array.isArray(stored) ? stored : [];
+
+          localStorage.setItem(
+            NOTICE_STORAGE_KEY,
+            JSON.stringify([...new Set([...ids, notice.id])])
+          );
+          removeItem();
+        } catch (error) {
+          console.error("非表示設定の保存に失敗しました", error);
+          alert("非表示設定を保存できませんでした。");
+        }
+      });
+
+      actions.append(closeButton, hideButton);
+      item.append(title, message, actions);
+      panel.append(item);
+    });
+
+    overlay.append(panel);
+    document.body.append(overlay);
+
+  } catch (error) {
+    console.error("お知らせの取得・表示に失敗しました", error);
+  }
+}
+
+// アプリ起動時にお知らせを確認
+showAppNotices();
