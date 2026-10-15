@@ -72,6 +72,8 @@
 
         <textarea id="activity" rows="4" maxlength="300" placeholder="例：散歩を30分した"></textarea>
 
+
+        <!-- 気分の設定画面 -->
         <div id="moodSettingsPanel" class="card mood-settings-panel hidden">
           <h3>気分の設定</h3>
 
@@ -91,21 +93,6 @@
               <input id="moodStep" type="number" step="any" min="0.000001">
             </label>
           </div>
-
-        <fieldset>
-          <div class="mood-title-row">
-            <legend>気分</legend>
-            <button type="button" id="openMoodSettings" class="secondary-button">
-              気分の設定
-            </button>
-          </div>
-
-          <div id="moodButtons" class="mood-buttons"></div>
-
-          <p id="moodGuide" class="mood-guide"></p>
-        </fieldset>
-
-        
 
           <label for="moodMethod">入力方法</label>
           <select id="moodMethod">
@@ -127,6 +114,21 @@
             </button>
           </div>
         </div>
+
+        <!-- 気分の入力欄 -->
+        <fieldset>
+          <div class="mood-title-row">
+            <legend>気分</legend>
+
+            <button type="button" id="openMoodSettings" class="secondary-button">
+              気分の設定
+            </button>
+          </div>
+
+          <div id="moodButtons" class="mood-buttons"></div>
+
+          <p id="moodGuide" class="mood-guide"></p>
+        </fieldset>
 
 
         <p id="formMessage" class="message" aria-live="polite"></p>
@@ -264,7 +266,7 @@
     <section id="graphPage" class="page">
       <div class="card graph-card">
         <h2>気分の推移</h2>
-        
+
         <p id="graphNote" class="graph-note">
           横軸：時刻　縦軸：気分
         </p>
@@ -331,17 +333,12 @@
 
         <label for="searchKeyword">検索ワード</label>
         <input id="searchKeyword" type="search" placeholder="例：散歩">
-      
+
         <label for="searchMood">
           気分（数値で完全一致）
         </label>
 
-        <input
-          id="searchMood"
-          type="number"
-          step="any"
-          placeholder="指定なし（過去の値も検索できます）"
-        >
+        <input id="searchMood" type="number" step="any" placeholder="指定なし（過去の値も検索できます）">
 
         <div class="search-actions">
           <button id="searchButton" class="primary-button" type="button">
