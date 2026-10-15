@@ -2778,3 +2778,170 @@ async function loadNotices() {
 }
 
 initializeApp();
+
+/* =========================================
+   共通設定メニュー・アプリの共有
+========================================= */
+
+(() => {
+  const settings =
+    document.getElementById("appSettingsDialog");
+
+  const share =
+    document.getElementById("appShareDialog");
+
+  const appUrl =
+    "https://kotom0919.github.io/Activity-Log-ver.2/";
+
+  function toggle(el, open) {
+    el.classList.toggle("hidden", !open);
+    el.setAttribute("aria-hidden", String(!open));
+  }
+
+  function openSettings() {
+    toggle(settings, true);
+  }
+
+  function closeSettings() {
+    toggle(settings, false);
+  }
+
+  function closeShare() {
+    toggle(share, false);
+  }
+
+  // 設定を開く
+  document.getElementById("openSettingsDialogButton")
+    .addEventListener("click", openSettings);
+
+  // 設定を閉じる
+  document.getElementById("closeAppSettingsButton")
+    .addEventListener("click", closeSettings);
+
+  settings.addEventListener("click", event => {
+    if (event.target === settings) {
+      closeSettings();
+    }
+  });
+
+  // ========================================
+  // データの移行
+  // ========================================
+
+  document.getElementById("settingsTransferButton")
+    .addEventListener("click", () => {
+      closeSettings();
+
+      document.getElementById("openTransferDialogButton")
+        .click();
+    });
+
+  // ========================================
+  // アプリをシェア
+  // ========================================
+
+  document.getElementById("settingsShareButton")
+    .addEventListener("click", () => {
+      closeSettings();
+
+      document.getElementById("appShareUrl").value =
+        appUrl;
+
+      document.getElementById("appShareMessage")
+        .textContent = "";
+
+      document.getElementById("appShareQr").src =
+        "https://api.qrserver.com/v1/create-qr-code/" +
+        "?size=220x220&data=" +
+        encodeURIComponent(appUrl);
+
+      toggle(share, true);
+    });
+
+  document.getElementById("closeAppShareButton")
+    .addEventListener("click", closeShare);
+
+  share.addEventListener("click", event => {
+    if (event.target === share) {
+      closeShare();
+    }
+  });
+
+  // URLをコピー
+  document.getElementById("copyAppShareButton")
+    .addEventListener("click", async () => {
+      const message =
+        document.getElementById("appShareMessage");
+
+      try {
+        await navigator.clipboard.writeText(appUrl);
+        message.textContent = "URLをコピーしました.";
+      } catch (error) {
+        const field =
+          document.getElementById("appShareUrl");
+
+        field.focus();
+        field.select();
+
+        message.textContent =
+          "URLを選択しました。コピーしてください。";
+      }
+    });
+
+  // スマホの共有機能
+  document.getElementById("nativeAppShareButton")
+    .addEventListener("click", async () => {
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: "活動記録表",
+            url: appUrl
+          });
+        } catch (error) {
+          if (error.name !== "AbortError") {
+            document.getElementById("appShareMessage")
+              .textContent =
+              "共有できませんでした。URLコピーをご利用ください。";
+          }
+        }
+      } else {
+        document.getElementById("copyAppShareButton")
+          .click();
+      }
+    });
+
+  // ========================================
+  // ほかのアプリを探す
+  // ========================================
+
+  document.getElementById("settingsOtherAppsButton")
+    .addEventListener("click", () => {
+      const menuButton =
+        document.getElementById("shared-app-menu-button");
+
+      if (!menuButton) {
+        alert(
+          "アプリ一覧を読み込めませんでした。" +
+          "通信状態とApp-menuの公開設定を確認してください。"
+        );
+        return;
+      }
+
+      closeSettings();
+      menuButton.click();
+    });
+
+  // ========================================
+  // Escキーで閉じる
+  // ========================================
+
+  document.addEventListener("keydown", event => {
+    if (event.key !== "Escape") return;
+
+    if (!share.classList.contains("hidden")) {
+      closeShare();
+    } else if (!settings.classList.contains("hidden")) {
+      closeSettings();
+    }
+  });
+})();

@@ -2265,3 +2265,83 @@ input[type="date"]::-webkit-date-and-time-value {
   background: #e9f5f0;
   color: #397c65;
 }
+
+/* ========================================
+   共通設定画面
+======================================== */
+
+.app-settings-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.app-settings-item {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 14px;
+  align-items: center;
+  gap: 10px;
+
+  width: 100%;
+  min-height: 76px;
+  padding: 12px;
+
+  text-align: left;
+  color: var(--text);
+  background: #f7faf8;
+
+  border: 1px solid var(--border);
+  border-radius: 12px;
+
+  font-weight: 700;
+}
+
+.app-settings-item small {
+  display: block;
+  margin-top: 4px;
+
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 400;
+}
+
+.app-settings-symbol {
+  font-size: 1.5rem;
+  color: var(--main-dark);
+  text-align: center;
+}
+
+.app-settings-card .form-actions {
+  flex-wrap: wrap;
+}
+
+.app-settings-card .form-actions button {
+  flex: 1 1 125px;
+}
+
+/* QRコード */
+.app-share-qr {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+}
+
+.app-share-qr img {
+  width: min(220px, 100%);
+  aspect-ratio: 1;
+  object-fit: contain;
+}
+
+/* 共通アプリ一覧の右下ボタンを隠す */
+#shared-app-menu-button {
+  display: none !important;
+}
+
+/* 印刷時は設定画面を表示しない */
+@media print {
+  #appSettingsDialog,
+  #appShareDialog,
+  #shared-app-menu-root {
+    display: none !important;
+  }
+}

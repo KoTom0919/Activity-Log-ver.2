@@ -34,9 +34,11 @@
     <button id="openPrintDialogButton" class="header-print-button" type="button">
       印刷
     </button>
-    <button id="openTransferDialogButton" class="header-transfer-button" type="button" aria-haspopup="dialog">
-      移行
+
+    <button id="openSettingsDialogButton" class="header-transfer-button" type="button" aria-haspopup="dialog">
+      設定
     </button>
+
   </header>
 
   <main>
@@ -396,6 +398,87 @@
     </div>
   </main>
 
+
+  <!-- 共通設定画面 -->
+  <div id="appSettingsDialog" class="modal-backdrop hidden" role="dialog" aria-modal="true"
+    aria-labelledby="appSettingsTitle" aria-hidden="true">
+
+    <div class="transfer-dialog-card app-settings-card">
+
+      <button id="closeAppSettingsButton" class="transfer-close-button" type="button" aria-label="閉じる">×</button>
+
+      <h2 id="appSettingsTitle">設定</h2>
+
+      <div class="app-settings-list">
+
+        <button id="settingsTransferButton" class="app-settings-item" type="button">
+          <span class="app-settings-symbol">⇄</span>
+          <span>
+            データの移行
+            <small>データを書き出す・読み込む</small>
+          </span>
+          <span aria-hidden="true">›</span>
+        </button>
+
+        <button id="settingsShareButton" class="app-settings-item" type="button">
+          <span class="app-settings-symbol">↗</span>
+          <span>
+            アプリをシェア
+            <small>共有・URLコピー・QRコード</small>
+          </span>
+          <span aria-hidden="true">›</span>
+        </button>
+
+        <button id="settingsOtherAppsButton" class="app-settings-item" type="button">
+          <span class="app-settings-symbol">▦</span>
+          <span>
+            ほかのアプリを探す
+            <small>アプリ一覧を表示</small>
+          </span>
+          <span aria-hidden="true">›</span>
+        </button>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- アプリ共有画面 -->
+  <div id="appShareDialog" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="appShareTitle"
+    aria-hidden="true">
+
+    <div class="transfer-dialog-card app-settings-card">
+
+      <button id="closeAppShareButton" class="transfer-close-button" type="button" aria-label="閉じる">×</button>
+
+      <h2 id="appShareTitle">アプリをシェア</h2>
+
+      <p>活動記録表のURLを共有できます。</p>
+
+      <input id="appShareUrl" type="text" readonly aria-label="共有URL">
+
+      <div class="form-actions">
+        <button id="copyAppShareButton" type="button" class="secondary-button">
+          URLをコピー
+        </button>
+
+        <button id="nativeAppShareButton" type="button" class="primary-button">
+          共有する
+        </button>
+      </div>
+
+      <div class="app-share-qr">
+        <img id="appShareQr" alt="活動記録表のQRコード">
+      </div>
+
+      <p id="appShareMessage" class="message" aria-live="polite"></p>
+
+    </div>
+  </div>
+
+  <!-- 従来のデータ移行処理を呼び出すためのボタン -->
+  <button id="openTransferDialogButton" type="button" class="hidden" tabindex="-1" aria-hidden="true"></button>
+
+
   <!-- データ移行 -->
   <div id="transferDialog" class="modal-backdrop hidden" role="dialog" aria-modal="true"
     aria-labelledby="transferDialogTitle" aria-hidden="true">
@@ -483,6 +566,9 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="script.js?v=33"></script>
+
+  <script src="https://kotom0919.github.io/App-menu/app-menu.js?v=2"></script>
+
 </body>
 
 </html>
