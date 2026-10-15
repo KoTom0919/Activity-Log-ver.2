@@ -72,20 +72,6 @@
 
         <textarea id="activity" rows="4" maxlength="300" placeholder="例：散歩を30分した"></textarea>
 
-
-        <fieldset>
-          <div class="mood-title-row">
-            <legend>気分</legend>
-            <button type="button" id="openMoodSettings" class="secondary-button">
-              気分の設定
-            </button>
-          </div>
-
-          <div id="moodButtons" class="mood-buttons"></div>
-
-          <p id="moodGuide" class="mood-guide"></p>
-        </fieldset>
-
         <div id="moodSettingsPanel" class="card mood-settings-panel hidden">
           <h3>気分の設定</h3>
 
@@ -105,6 +91,21 @@
               <input id="moodStep" type="number" step="any" min="0.000001">
             </label>
           </div>
+
+        <fieldset>
+          <div class="mood-title-row">
+            <legend>気分</legend>
+            <button type="button" id="openMoodSettings" class="secondary-button">
+              気分の設定
+            </button>
+          </div>
+
+          <div id="moodButtons" class="mood-buttons"></div>
+
+          <p id="moodGuide" class="mood-guide"></p>
+        </fieldset>
+
+        
 
           <label for="moodMethod">入力方法</label>
           <select id="moodMethod">
@@ -484,7 +485,7 @@
   </nav>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="script.js?v=34"></script>
+  <script src="script.js?v=33"></script>
 </body>
 
 </html>
