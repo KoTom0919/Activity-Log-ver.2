@@ -1289,19 +1289,50 @@ function drawGraph() {
   const yMinimum = normalized ? 0 : rawMinimum;
   const yMaximum = normalized ? 100 : rawMaximum;
 
-  // 表示日の指定がある場合は時刻のみ表示
+  
+  // 表示日が指定されているか
   const singleDay = Boolean(graphDateInput.value);
 
-  const labels = items.map(record =>
-    singleDay
-      ? record.time
-      : `${record.date.slice(5)} ${record.time}`
-  );
+  // 日付と時刻を数値（タイムスタンプ）に変換
+  function recordTimestamp(record) {
+    const [year, month, day] =
+      record.date.split("-").map(Number);
 
+    const [hour, minute] =
+      record.time.split(":").map(Number);
+
+    return new Date(
+      year,
+      month - 1,
+      day,
+      hour,
+      minute
+    ).getTime();
+  }
+
+  // 記録した実際の日時を横軸の位置にする
   const points = items.map((record, index) => ({
-    x: index,
+    x: recordTimestamp(record),
     y: values[index]
   }));
+
+  // 1日表示の場合は0:00〜翌日0:00を横軸にする
+  let xMinimum;
+  let xMaximum;
+
+  if (singleDay) {
+    const [year, month, day] =
+      graphDateInput.value.split("-").map(Number);
+
+    xMinimum = new Date(
+      year, month - 1, day, 0, 0
+    ).getTime();
+
+    xMaximum = new Date(
+      year, month - 1, day + 1, 0, 0
+    ).getTime();
+  }
+
 
   const pointColors = items.map(record =>
     moodColor(
@@ -1393,27 +1424,43 @@ function drawGraph() {
       },
 
       scales: {
+        
         x: {
           type: "linear",
 
-          min: 0,
-          max: Math.max(items.length - 1, 1),
+          // 1日表示では0:00〜24:00に固定
+          min: singleDay ? xMinimum : undefined,
+          max: singleDay ? xMaximum : undefined,
 
           ticks: {
-            stepSize: 1,
-            maxTicksLimit: 9,
+            maxTicksLimit: singleDay ? 9 : 8,
 
             callback(value) {
-              const index = Math.round(value);
+              const date = new Date(Number(value));
 
-              if (
-                Math.abs(value - index) > 0.001 ||
-                !labels[index]
-              ) {
-                return "";
+              if (singleDay) {
+                // 1日表示では時刻を表示
+                if (value === xMaximum) {
+                  return "24:00";
+                }
+
+                return (
+                  String(date.getHours()).padStart(2, "0") +
+                  ":" +
+                  String(date.getMinutes()).padStart(2, "0")
+                );
               }
 
-              return labels[index];
+              // 全期間表示では日付と時刻を表示
+              return (
+                String(date.getMonth() + 1).padStart(2, "0") +
+                "/" +
+                String(date.getDate()).padStart(2, "0") +
+                " " +
+                String(date.getHours()).padStart(2, "0") +
+                ":" +
+                String(date.getMinutes()).padStart(2, "0")
+              );
             }
           },
 
@@ -1424,6 +1471,7 @@ function drawGraph() {
               : "日付・時刻"
           }
         },
+
 
         y: {
           min: yMinimum,
@@ -1455,8 +1503,8 @@ function drawGraph() {
 
   if (graphNote) {
     graphNote.textContent = normalized
-      ? "横軸：記録順（等間隔）　縦軸：気分（0〜100％換算）"
-      : `横軸：記録順（等間隔）　縦軸：気分（元の数値・現在の設定 ${formatMood(moodSettings.min)}〜${formatMood(moodSettings.max)}）`;
+      ? "横軸：実際の日時　縦軸：気分（0〜100％換算）"
+      : "横軸：実際の日時　縦軸：気分（元の数値）";
   }
 
 }
