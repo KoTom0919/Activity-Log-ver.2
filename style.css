@@ -2188,3 +2188,80 @@ input[type="date"]::-webkit-date-and-time-value {
     display: none !important;
   }
 }
+
+/* =========================================
+   気分入力欄の拡大
+   プルダウン・キーボード・スライダー
+========================================= */
+
+/* 1つの入力欄を横幅いっぱいに表示 */
+#moodButtons.mood-single-input,
+#completeMoodContainer.mood-single-input {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 64px;
+}
+
+/* プルダウン・キーボード入力 */
+#moodButtons.mood-single-input input:not([type="range"]),
+#moodButtons.mood-single-input select,
+#completeMoodContainer.mood-single-input input:not([type="range"]),
+#completeMoodContainer.mood-single-input select {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  height: 56px;
+  padding: 10px 14px;
+  font-size: 20px;
+  border-radius: 12px;
+}
+
+/* スライダー本体 */
+#moodButtons input[type="range"],
+#completeMoodContainer input[type="range"] {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  height: 56px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  accent-color: #397c65;
+  cursor: pointer;
+  touch-action: pan-x;
+}
+
+/* スライダーのつまみ（Chrome・Safari・iPhone） */
+#moodButtons input[type="range"]::-webkit-slider-thumb,
+#completeMoodContainer input[type="range"]::-webkit-slider-thumb {
+  width: 32px;
+  height: 32px;
+}
+
+/* スライダーのつまみ（Firefox） */
+#moodButtons input[type="range"]::-moz-range-thumb,
+#completeMoodContainer input[type="range"]::-moz-range-thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #397c65;
+  border: 2px solid white;
+}
+
+/* スライダーの数値表示 */
+#moodButtons output,
+#completeMoodContainer output {
+  flex: 0 0 72px;
+  min-width: 72px;
+  padding: 10px 4px;
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+  border-radius: 10px;
+  background: #e9f5f0;
+  color: #397c65;
+}

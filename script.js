@@ -1449,7 +1449,7 @@ function drawGraph() {
       }
     }
   });
-  
+
   const graphNote =
     document.getElementById("graphNote");
 
@@ -2613,11 +2613,19 @@ function createRecordId() {
    初期化
 ========================================= */
 
+
 function initializeApp() {
   loadNotices();
   setCurrentDateTime();
 
+  // 時系列・グラフの初期表示日を本日にする
+  const today = formatInputDate(new Date());
+
+  timelineDateInput.value = today;
+  graphDateInput.value = today;
+
   renderMoodInput();
+
   renderRoutineActivities();
   renderPlanList();
   renderTimeline();
