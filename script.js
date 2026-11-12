@@ -2914,21 +2914,10 @@ initializeApp();
   // ほかのアプリを探す
   // ========================================
 
-  document.getElementById("settingsOtherAppsButton")
+    document.getElementById("settingsOtherAppsButton")
     .addEventListener("click", () => {
-      const menuButton =
-        document.getElementById("shared-app-menu-button");
-
-      if (!menuButton) {
-        alert(
-          "アプリ一覧を読み込めませんでした。" +
-          "通信状態とApp-menuの公開設定を確認してください。"
-        );
-        return;
-      }
-
       closeSettings();
-      menuButton.click();
+      window.location.assign("https://kotom0919.github.io/App-menu/");
     });
 
   // ========================================
